@@ -128,11 +128,14 @@ class TemplateRegistryGenerator
         $tvCatalog = array_values($tvCatalog);
         $stats['unique_tvs'] = count($tvCatalog);
 
+        $clientSettings = (new ClientSettingsExtractor($this->config, $this->projectRootPath()))->extract();
+
         return [
             'generated_at' => date(DATE_ATOM),
             'project' => parse_url((string) config('app.url'), PHP_URL_HOST) ?: (string) $this->cfg('project_fallback', 'evolutioncms-project'),
             'templates' => $rows,
             'tv_catalog' => $tvCatalog,
+            'client_settings' => $clientSettings,
             'stats' => $stats,
         ];
     }
@@ -410,6 +413,8 @@ class TemplateRegistryGenerator
     {
         $stats = (array) ($payload['stats'] ?? []);
         $templates = (array) ($payload['templates'] ?? []);
+        $clientSettings = (array) ($payload['client_settings'] ?? []);
+        $clientSettingsStats = (array) ($clientSettings['stats'] ?? []);
 
         $lines = [];
         $lines[] = '# Templates Registry';
@@ -422,6 +427,8 @@ class TemplateRegistryGenerator
         $lines[] = '- placeholder_views: ' . ($stats['placeholder_views'] ?? 0);
         $lines[] = '- total_tvs_links: ' . ($stats['total_tvs_links'] ?? 0);
         $lines[] = '- unique_tvs: ' . ($stats['unique_tvs'] ?? 0);
+        $lines[] = '- client_settings_exists: ' . (!empty($clientSettings['exists']) ? 'true' : 'false');
+        $lines[] = '- client_settings_tabs_total: ' . ($clientSettingsStats['tabs_total'] ?? 0);
         $lines[] = '';
         $lines[] = '| template id | alias | controller | view | tv count | flags |';
         $lines[] = '|---:|---|---|---|---:|---|';

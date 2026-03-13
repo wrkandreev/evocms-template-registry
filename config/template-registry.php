@@ -31,6 +31,11 @@ return [
         'EvolutionCMS\\Main\\' => 'core/custom/packages/Main/src/',
     ],
 
+    'client_settings' => [
+        'config_path' => 'assets/modules/clientsettings/config',
+        'selector_controllers_path' => 'assets/tvs/selector/lib',
+    ],
+
     'api' => [
         'enabled' => true,
         'prefix' => 'api/template-registry',

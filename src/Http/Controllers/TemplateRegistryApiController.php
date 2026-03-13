@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace WrkAndreev\EvocmsTemplateRegistry\Http\Controllers;
 
+use RuntimeException;
 use WrkAndreev\EvocmsTemplateRegistry\Services\TemplateRegistryGenerator;
 
 class TemplateRegistryApiController
 {
     public function index($request)
     {
-        $payload = $this->payload();
+        try {
+            $payload = $this->payload();
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
 
         $templateId = $request->query('template_id');
         if ($templateId !== null && $templateId !== '') {
@@ -31,12 +36,22 @@ class TemplateRegistryApiController
 
     public function templates()
     {
-        return \response()->json((array) ($this->payload()['templates'] ?? []));
+        try {
+            return \response()->json((array) ($this->payload()['templates'] ?? []));
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
     }
 
     public function templateById(int $id)
     {
-        foreach ((array) ($this->payload()['templates'] ?? []) as $template) {
+        try {
+            $templates = (array) ($this->payload()['templates'] ?? []);
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+
+        foreach ($templates as $template) {
             if ((int) ($template['id'] ?? 0) === $id) {
                 return \response()->json($template);
             }
@@ -49,12 +64,20 @@ class TemplateRegistryApiController
 
     public function tvCatalog()
     {
-        return \response()->json((array) ($this->payload()['tv_catalog'] ?? []));
+        try {
+            return \response()->json((array) ($this->payload()['tv_catalog'] ?? []));
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
     }
 
     public function stats()
     {
-        return \response()->json((array) ($this->payload()['stats'] ?? []));
+        try {
+            return \response()->json((array) ($this->payload()['stats'] ?? []));
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
     }
 
     /** @return array<string,mixed> */
@@ -63,5 +86,13 @@ class TemplateRegistryApiController
         $config = (array) \config('template-registry', []);
         $generator = new TemplateRegistryGenerator($config);
         return $generator->buildPayload();
+    }
+
+    private function errorResponse(string $message)
+    {
+        return \response()->json([
+            'message' => $message,
+            'code' => 'registry_unavailable',
+        ], 503);
     }
 }

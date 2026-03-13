@@ -12,6 +12,7 @@ It provides:
 - machine-readable outputs for local tooling/LLM context
 - HTTP API with access control for reading current entity state from admin-side tools
 - manager page to enable/disable API access quickly
+- optional ClientSettings extraction (safe, non-required)
 
 ## Compatibility
 
@@ -80,6 +81,8 @@ Generated payload files:
 - `templates.generated.md`
 - `templates.generated.php`
 
+Payload always includes `client_settings` object even when ClientSettings module is missing.
+
 ## API endpoints
 
 Default prefix: `/api/template-registry`
@@ -93,6 +96,11 @@ Default prefix: `/api/template-registry`
 Optional single-template filter:
 
 - `GET /api/template-registry?template_id=12`
+
+If registry cannot be built (for example required tables are missing), API returns controlled JSON error:
+
+- HTTP `503`
+- body contains `code = registry_unavailable`
 
 ## API access control
 
@@ -118,6 +126,47 @@ The manager toggle writes runtime state here:
 - `core/storage/app/template-registry-api-state.json`
 
 If file does not exist, default comes from `api.enabled`.
+
+## Optional ClientSettings integration
+
+ClientSettings is optional and must never be treated as required.
+
+Default paths:
+
+- `assets/modules/clientsettings/config`
+- `assets/tvs/selector/lib/*.controller.class.php`
+
+Rules:
+
+- Always return `client_settings` in payload.
+- If config directory is absent: `client_settings.exists=false`, empty `tabs` and `fields_catalog`.
+- Invalid/broken tab configs must not break generation/API.
+- Selector controller enrichment is best-effort. Missing file/controller is non-fatal.
+
+## JSON contract requirement
+
+Registry payload must include:
+
+- `generated_at`, `project`, `templates`, `tv_catalog`, `stats`
+- `client_settings` object (always present)
+
+`client_settings` shape:
+
+- `exists` (bool)
+- `tabs` (array)
+- `fields_catalog` (array)
+- `stats` with tabs/fields/selector counters
+
+## Testing
+
+Manual regression checklist: `docs/test-plan.md`
+
+Must cover at least:
+
+- ClientSettings installed
+- ClientSettings absent
+- selector controllers partially absent
+- empty/broken tab configs
 
 ## Manager page for API toggle
 
