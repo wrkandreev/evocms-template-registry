@@ -10,6 +10,10 @@ use WrkAndreev\EvocmsTemplateRegistry\Services\TemplateRegistryGenerator;
 
 class GenerateTemplateRegistryCommand extends Command
 {
+    protected $aliases = [
+        'main:registry:generate',
+    ];
+
     protected $signature = 'template-registry:generate
         {--output= : Output directory}
         {--format= : json|md|php|all}
