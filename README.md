@@ -15,6 +15,22 @@
 
 ## Установка
 
+Пакет пока не опубликован в Packagist.
+Подключайте его напрямую из GitHub-репозитория.
+
+Пример для `composer.json` проекта:
+
+```json
+{
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "git@github.com:wrkandreev/evocms-template-registry.git"
+    }
+  ]
+}
+```
+
 Выполнять из директории `core` вашего проекта:
 
 ```bash
