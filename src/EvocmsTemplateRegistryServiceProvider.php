@@ -6,6 +6,8 @@ namespace WrkAndreev\EvocmsTemplateRegistry;
 
 use EvolutionCMS\ServiceProvider;
 use WrkAndreev\EvocmsTemplateRegistry\Console\GenerateTemplateRegistryCommand;
+use WrkAndreev\EvocmsTemplateRegistry\Console\InstallTemplateRegistryModuleCommand;
+use WrkAndreev\EvocmsTemplateRegistry\Console\UninstallTemplateRegistryModuleCommand;
 
 class EvocmsTemplateRegistryServiceProvider extends ServiceProvider
 {
@@ -20,6 +22,8 @@ class EvocmsTemplateRegistryServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 GenerateTemplateRegistryCommand::class,
+                InstallTemplateRegistryModuleCommand::class,
+                UninstallTemplateRegistryModuleCommand::class,
             ]);
 
             if (method_exists($this, 'publishes') && function_exists('config_path')) {
@@ -27,6 +31,17 @@ class EvocmsTemplateRegistryServiceProvider extends ServiceProvider
                     $configPath => config_path('template-registry.php'),
                 ], 'evocms-template-registry-config');
             }
+        }
+    }
+
+    public function boot()
+    {
+        if (method_exists($this, 'loadRoutesFrom')) {
+            $this->loadRoutesFrom(dirname(__DIR__) . '/routes.php');
+        }
+
+        if (method_exists($this, 'loadViewsFrom')) {
+            $this->loadViewsFrom(dirname(__DIR__) . '/views', 'template-registry');
         }
     }
 }

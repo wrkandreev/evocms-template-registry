@@ -30,4 +30,13 @@ return [
     'controller_namespace_paths' => [
         'EvolutionCMS\\Main\\' => 'core/custom/packages/Main/src/',
     ],
+
+    'api' => [
+        'enabled' => true,
+        'prefix' => 'api/template-registry',
+        'middleware' => ['web'],
+        'require_manager' => true,
+        'access_token' => '',
+        'admin_prefix' => 'manager/template-registry',
+    ],
 ];
