@@ -1,57 +1,57 @@
 # Evocms Template Registry
 
-Reusable package for Evolution CMS 3 that generates a registry:
+Переиспользуемый пакет для Evolution CMS 3, который генерирует реестр:
 
 - template -> controller
 - template -> view
 - template -> TVs
 
-The command writes deterministic generated files (JSON / Markdown / PHP array) so they can be committed and reused by other tools.
+Команда формирует детерминированные выходные файлы (JSON / Markdown / PHP array), чтобы их можно было коммитить и использовать в других инструментах.
 
-## Product note
+## Заметка по продукту
 
-In addition to package output files, the same registry data should be available via API endpoints.
-This is needed so admin-side tools can read current entity state and understand how to work with these entities.
+Помимо файлов, которые генерирует пакет, те же данные реестра должны быть доступны через API.
+Это нужно, чтобы админские инструменты могли читать текущее состояние сущностей и понимать, как с ними работать.
 
-## Installation
+## Установка
 
-Inside your project `core` directory:
+Выполнять из директории `core` вашего проекта:
 
 ```bash
 php artisan package:installrequire wrkandreev/evocms-template-registry "*"
 ```
 
-Optional: publish config.
+Опционально: опубликовать конфиг.
 
 ```bash
 php artisan vendor:publish --provider="WrkAndreev\EvocmsTemplateRegistry\EvocmsTemplateRegistryServiceProvider" --tag="evocms-template-registry-config"
 ```
 
-Register manager module (so it appears in CMS Modules menu):
+Зарегистрировать модуль менеджера (чтобы появился в меню Modules):
 
 ```bash
 php core/artisan template-registry:module:install
 ```
 
-Remove manager module:
+Удалить модуль менеджера:
 
 ```bash
 php core/artisan template-registry:module:uninstall
 ```
 
-## Usage
+## Использование
 
 ```bash
 php core/artisan template-registry:generate
 ```
 
-Options:
+Опции:
 
-- `--output=` custom output directory
+- `--output=` кастомная директория для вывода
 - `--format=json|md|php|all`
-- `--strict` fail when missing controller/view is detected
+- `--strict` завершить с ошибкой при обнаружении отсутствующего controller/view
 
-Example:
+Пример:
 
 ```bash
 php core/artisan template-registry:generate --output=core/custom/packages/Main/generated/registry --format=all --strict
@@ -59,64 +59,64 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 
 ## API
 
-Package also exposes the same registry data over HTTP API (for admin-side tools/agents).
+Пакет также отдает те же данные реестра через HTTP API (для админских инструментов/агентов).
 
-Access is restricted by default:
+По умолчанию доступ ограничен:
 
-- manager session is required (`api.require_manager = true`)
-- API can be globally switched on/off from manager module
-- optional token access for local tools (`X-Template-Registry-Token` header)
+- требуется manager-сессия (`api.require_manager = true`)
+- API можно глобально включать/выключать через модуль в менеджере
+- опционально можно использовать токен для локальных инструментов (заголовок `X-Template-Registry-Token`)
 
-Default endpoints:
+Эндпоинты по умолчанию:
 
-- `GET /api/template-registry` full payload
-- `GET /api/template-registry/templates` templates only
-- `GET /api/template-registry/templates/{id}` single template by id
-- `GET /api/template-registry/tvs` TV catalog only
-- `GET /api/template-registry/stats` stats only
-- `GET /api/template-registry/resource-context` resource/template/TV context by URL or id
+- `GET /api/template-registry` полный payload
+- `GET /api/template-registry/templates` только шаблоны
+- `GET /api/template-registry/templates/{id}` один шаблон по id
+- `GET /api/template-registry/tvs` только каталог TV
+- `GET /api/template-registry/stats` только статистика
+- `GET /api/template-registry/resource-context` контекст ресурс/шаблон/TV по URL или id
 
-Optional filter:
+Опциональные фильтры:
 
-- `GET /api/template-registry?template_id=12` single template by query
+- `GET /api/template-registry?template_id=12` один шаблон через query
 - `GET /api/template-registry/resource-context?url=/catalog/iphone-15`
 - `GET /api/template-registry/resource-context?resource_id=123`
 
-`resource-context` returns:
+`resource-context` возвращает:
 
-- resource meta (`id`, `pagetitle`, `alias`, `uri`, `template_id`)
-- resolved template object from registry
-- available TVs for template (`tvs_available`)
-- current TV values for this resource (`tv_values`)
+- мета ресурса (`id`, `pagetitle`, `alias`, `uri`, `template_id`)
+- объект шаблона из реестра
+- доступные TV для шаблона (`tvs_available`)
+- текущие значения TV для этого ресурса (`tv_values`)
 
-### Manager module (API toggle)
+### Модуль менеджера (переключение API)
 
-Open module page in manager:
+Страница модуля в менеджере:
 
 - `GET /manager/template-registry/access`
 
-On this page you can enable/disable API access without editing config manually.
+На этой странице можно включать/выключать доступ к API без ручного редактирования конфига.
 
-To register this page as manager module item (Modules menu), run:
+Чтобы зарегистрировать эту страницу как пункт модуля (меню Modules), выполните:
 
 - `php core/artisan template-registry:module:install`
 
-## Generated structure
+## Структура сгенерированных файлов
 
 - `templates.generated.json`
 - `templates.generated.md`
 - `templates.generated.php`
 
-Payload fields:
+Поля payload:
 
-- `templates[]` with `controller`, `view`, `tv_refs`, `flags`
-- `tv_catalog[]` for deduplicated TV metadata
-- `client_settings` always present (object; optional module data)
-- `stats` summary (`missing_*`, `unique_tvs`, etc.)
+- `templates[]` с `controller`, `view`, `tv_refs`, `flags`
+- `tv_catalog[]` для дедуплицированного каталога TV
+- `client_settings` присутствует всегда (объект; данные модуля опциональны)
+- `stats` сводная статистика (`missing_*`, `unique_tvs` и т.д.)
 
-### JSON contract (schema-like)
+### JSON-контракт (schema-like)
 
-`client_settings` is always present even when ClientSettings module is not installed.
+`client_settings` присутствует всегда, даже если модуль ClientSettings не установлен.
 
 ```json
 {
@@ -150,39 +150,39 @@ Payload fields:
 }
 ```
 
-### Optional ClientSettings integration
+### Опциональная интеграция ClientSettings
 
-ClientSettings is not required.
+ClientSettings не является обязательным.
 
-- If `assets/modules/clientsettings/config` does not exist: payload stays valid and `client_settings.exists=false`.
-- Tab configs are loaded safely; invalid/broken files increment `client_settings.stats.tabs_invalid` and do not break API/command.
-- For selector fields (`customtv:selector`) package tries to enrich controller metadata from `assets/tvs/selector/lib/*.controller.class.php`.
-- Missing selector controller files are non-fatal (`controller_exists=false`).
+- Если `assets/modules/clientsettings/config` не существует: payload остается валидным и `client_settings.exists=false`.
+- Tab-конфиги загружаются безопасно; невалидные/битые файлы увеличивают `client_settings.stats.tabs_invalid` и не ломают API/команду.
+- Для selector-полей (`customtv:selector`) пакет пытается обогатить метаданные контроллера из `assets/tvs/selector/lib/*.controller.class.php`.
+- Отсутствующие файлы selector-контроллеров не являются фатальной ошибкой (`controller_exists=false`).
 
-### API/command failure behavior
+### Поведение при ошибках API/команды
 
-- Missing required TV/template tables returns controlled error (no fatal).
-- CLI command returns failure code with readable message.
-- API returns `503` with `{"code":"registry_unavailable"}` and error message.
+- Отсутствие обязательных таблиц TV/template возвращает контролируемую ошибку (без фатала).
+- CLI-команда возвращает код ошибки и читаемое сообщение.
+- API возвращает `503` с `{"code":"registry_unavailable"}` и текстом ошибки.
 
-## Test plan
+## Тест-план
 
-Manual regression plan: `docs/test-plan.md`
+План ручной регрессии: `docs/test-plan.md`
 
-## Config
+## Конфигурация
 
-Config file: `config/template-registry.php`.
+Файл конфига: `config/template-registry.php`.
 
-Main settings:
+Основные настройки:
 
-- output defaults (`output`, `format`, `strict`)
-- table names (`site_templates`, `site_tmplvar_templates`, `site_tmplvars`)
-- fallback conventions for controller and view
-- controller namespace/path mapping for file resolution
-- optional ClientSettings paths (`client_settings.config_path`, `client_settings.selector_controllers_path`)
-- resource lookup tables (`resources_table`, `tv_values_table`)
-- API options (`api.enabled`, `api.prefix`, `api.middleware`, `api.require_manager`, `api.access_token`, `api.admin_prefix`)
+- параметры вывода (`output`, `format`, `strict`)
+- имена таблиц (`site_templates`, `site_tmplvar_templates`, `site_tmplvars`)
+- fallback-конвенции для controller и view
+- маппинг namespace/path для поиска файлов controller
+- опциональные пути ClientSettings (`client_settings.config_path`, `client_settings.selector_controllers_path`)
+- таблицы для lookup ресурсов (`resources_table`, `tv_values_table`)
+- настройки API (`api.enabled`, `api.prefix`, `api.middleware`, `api.require_manager`, `api.access_token`, `api.admin_prefix`)
 
-## Compatibility
+## Совместимость
 
-The package targets Evolution CMS 3 CE.
+Пакет ориентирован на Evolution CMS 3 CE.
