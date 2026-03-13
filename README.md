@@ -74,10 +74,20 @@ Default endpoints:
 - `GET /api/template-registry/templates/{id}` single template by id
 - `GET /api/template-registry/tvs` TV catalog only
 - `GET /api/template-registry/stats` stats only
+- `GET /api/template-registry/resource-context` resource/template/TV context by URL or id
 
 Optional filter:
 
 - `GET /api/template-registry?template_id=12` single template by query
+- `GET /api/template-registry/resource-context?url=/catalog/iphone-15`
+- `GET /api/template-registry/resource-context?resource_id=123`
+
+`resource-context` returns:
+
+- resource meta (`id`, `pagetitle`, `alias`, `uri`, `template_id`)
+- resolved template object from registry
+- available TVs for template (`tvs_available`)
+- current TV values for this resource (`tv_values`)
 
 ### Manager module (API toggle)
 
@@ -170,6 +180,7 @@ Main settings:
 - fallback conventions for controller and view
 - controller namespace/path mapping for file resolution
 - optional ClientSettings paths (`client_settings.config_path`, `client_settings.selector_controllers_path`)
+- resource lookup tables (`resources_table`, `tv_values_table`)
 - API options (`api.enabled`, `api.prefix`, `api.middleware`, `api.require_manager`, `api.access_token`, `api.admin_prefix`)
 
 ## Compatibility

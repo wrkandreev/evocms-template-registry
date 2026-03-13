@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WrkAndreev\EvocmsTemplateRegistry\Http\Controllers;
 
 use RuntimeException;
+use WrkAndreev\EvocmsTemplateRegistry\Services\ResourceContextResolver;
 use WrkAndreev\EvocmsTemplateRegistry\Services\TemplateRegistryGenerator;
 
 class TemplateRegistryApiController
@@ -78,6 +79,27 @@ class TemplateRegistryApiController
         } catch (RuntimeException $e) {
             return $this->errorResponse($e->getMessage());
         }
+    }
+
+    public function resourceContext($request)
+    {
+        try {
+            $payload = $this->payload();
+            $config = (array) \config('template-registry', []);
+            $resolver = new ResourceContextResolver($config);
+            $context = $resolver->resolve(
+                $payload,
+                $request->query('resource_id'),
+                $request->query('url')
+            );
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+
+        $status = (int) ($context['status'] ?? 200);
+        unset($context['status']);
+
+        return \response()->json($context, $status);
     }
 
     /** @return array<string,mixed> */

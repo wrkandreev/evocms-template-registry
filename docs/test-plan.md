@@ -62,3 +62,10 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Prepare dataset with missing controller/view.
 - Run without `--strict`: verify success and missing flags/stats populated.
 - Run with `--strict`: verify non-zero exit code (`2`) and strict error message.
+
+7. Resource context endpoint
+
+- Call `GET /api/template-registry/resource-context?resource_id=<existing_id>`.
+- Verify response contains `resource`, `template`, `tvs_available`, `tv_values`.
+- Call `GET /api/template-registry/resource-context?url=<existing_resource_url_path>` and compare resolved resource id.
+- Call endpoint with unknown url/id and verify `404` with `code = resource_not_found`.

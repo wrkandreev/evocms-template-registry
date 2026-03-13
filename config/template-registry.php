@@ -12,6 +12,8 @@ return [
     'templates_table' => 'site_templates',
     'template_tv_pivot_table' => 'site_tmplvar_templates',
     'tvs_table' => 'site_tmplvars',
+    'resources_table' => 'site_content',
+    'tv_values_table' => 'site_tmplvar_contentvalues',
 
     'template_view_columns' => [
         'templateview',

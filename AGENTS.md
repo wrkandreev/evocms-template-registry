@@ -92,10 +92,19 @@ Default prefix: `/api/template-registry`
 - `GET /api/template-registry/templates/{id}`
 - `GET /api/template-registry/tvs`
 - `GET /api/template-registry/stats`
+- `GET /api/template-registry/resource-context`
 
 Optional single-template filter:
 
 - `GET /api/template-registry?template_id=12`
+
+Resource context for local AI/tools:
+
+- `GET /api/template-registry/resource-context?url=/path/to/resource`
+- `GET /api/template-registry/resource-context?resource_id=123`
+
+`resource-context` returns resource meta, matched template, available TVs and current TV values.
+Use this endpoint when agent needs exact context for one page/resource.
 
 If registry cannot be built (for example required tables are missing), API returns controlled JSON error:
 

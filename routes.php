@@ -22,6 +22,7 @@ Route::prefix($apiPrefix)
         Route::get('/templates/{id}', [TemplateRegistryApiController::class, 'templateById'])->where('id', '[0-9]+');
         Route::get('/tvs', [TemplateRegistryApiController::class, 'tvCatalog']);
         Route::get('/stats', [TemplateRegistryApiController::class, 'stats']);
+        Route::get('/resource-context', [TemplateRegistryApiController::class, 'resourceContext']);
     });
 
 $adminPrefix = trim((string) ($apiConfig['admin_prefix'] ?? 'manager/template-registry'), '/');
