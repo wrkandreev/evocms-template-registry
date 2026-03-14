@@ -49,6 +49,18 @@ php artisan vendor:publish --provider="WrkAndreev\EvocmsTemplateRegistry\EvocmsT
 php core/artisan template-registry:module:install
 ```
 
+Создать/обновить плагин автогенерации (по умолчанию создается выключенным):
+
+```bash
+php core/artisan template-registry:plugin:install
+```
+
+Удалить плагин автогенерации:
+
+```bash
+php core/artisan template-registry:plugin:uninstall
+```
+
 Удалить модуль менеджера:
 
 ```bash
@@ -66,6 +78,19 @@ php core/artisan template-registry:generate
 - `--output=` кастомная директория для вывода
 - `--format=json|md|php|all`
 - `--strict` завершить с ошибкой при обнаружении отсутствующего controller/view
+
+Для плагина автогенерации доступны опции:
+
+- `template-registry:plugin:install --enabled` (установить сразу включенным)
+- `template-registry:plugin:install --name="..." --description="..."`
+- `template-registry:plugin:uninstall --name="..."`
+
+Плагин слушает события менеджера:
+
+- `OnTVFormSave`
+- `OnTVFormDelete`
+- `OnTempFormSave`
+- `OnTempFormDelete`
 
 Пример:
 
@@ -113,6 +138,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - `GET /template-registry-admin/access`
 
 На этой странице можно включать/выключать доступ к API, менять access token без ручного редактирования конфига и смотреть preview сгенерированных сущностей (templates/TV).
+Там же отображается состояние плагина автогенерации и кнопки его установки/включения/выключения.
 Путь можно изменить через `api.admin_prefix`.
 Если токен уже задан в `config/template-registry.php`, модуль покажет текущее значение.
 

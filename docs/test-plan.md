@@ -69,3 +69,11 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Verify response contains `resource`, `template`, `tvs_available`, `tv_values`.
 - Call `GET /api/template-registry/resource-context?url=<existing_resource_url_path>` and compare resolved resource id.
 - Call endpoint with unknown url/id and verify `404` with `code = resource_not_found`.
+
+8. Auto-regenerate plugin
+
+- Run `php core/artisan template-registry:plugin:install` and verify plugin is created as disabled.
+- Enable plugin (from module page or `template-registry:plugin:install --enabled`).
+- Edit and save any TV/template in manager.
+- Verify generated registry files in `core/custom/packages/Main/generated/registry` are updated.
+- Disable plugin and repeat TV/template save; verify no new regeneration is triggered.

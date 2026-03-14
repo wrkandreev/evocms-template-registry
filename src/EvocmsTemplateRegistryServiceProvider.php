@@ -7,7 +7,9 @@ namespace WrkAndreev\EvocmsTemplateRegistry;
 use EvolutionCMS\ServiceProvider;
 use WrkAndreev\EvocmsTemplateRegistry\Console\GenerateTemplateRegistryCommand;
 use WrkAndreev\EvocmsTemplateRegistry\Console\InstallTemplateRegistryModuleCommand;
+use WrkAndreev\EvocmsTemplateRegistry\Console\InstallTemplateRegistryPluginCommand;
 use WrkAndreev\EvocmsTemplateRegistry\Console\UninstallTemplateRegistryModuleCommand;
+use WrkAndreev\EvocmsTemplateRegistry\Console\UninstallTemplateRegistryPluginCommand;
 
 class EvocmsTemplateRegistryServiceProvider extends ServiceProvider
 {
@@ -24,6 +26,8 @@ class EvocmsTemplateRegistryServiceProvider extends ServiceProvider
                 GenerateTemplateRegistryCommand::class,
                 InstallTemplateRegistryModuleCommand::class,
                 UninstallTemplateRegistryModuleCommand::class,
+                InstallTemplateRegistryPluginCommand::class,
+                UninstallTemplateRegistryPluginCommand::class,
             ]);
 
             if (method_exists($this, 'publishes') && function_exists('config_path')) {

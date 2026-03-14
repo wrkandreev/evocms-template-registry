@@ -12,6 +12,7 @@ It provides:
 - machine-readable outputs for local tooling/LLM context
 - HTTP API with access control for reading current entity state from admin-side tools
 - manager page to enable/disable API access quickly
+- optional manager plugin for auto-regeneration on TV/template changes
 - optional ClientSettings extraction (safe, non-required)
 
 ## Compatibility
@@ -68,6 +69,28 @@ php core/artisan template-registry:module:uninstall
 Option:
 
 - `--name="..."` (fallback match by module name)
+
+Create/update auto-regenerate plugin (disabled by default):
+
+```bash
+php core/artisan template-registry:plugin:install
+```
+
+Options:
+
+- `--enabled` install plugin as enabled
+- `--name="Template Registry Auto Generate"`
+- `--description="..."`
+
+Remove auto-regenerate plugin:
+
+```bash
+php core/artisan template-registry:plugin:uninstall
+```
+
+Option:
+
+- `--name="..."` (fallback match by plugin name)
 
 ## Generated files
 
@@ -176,6 +199,7 @@ Must cover at least:
 - ClientSettings absent
 - selector controllers partially absent
 - empty/broken tab configs
+- auto-regenerate plugin enabled/disabled behavior
 
 ## Manager page for API toggle
 
@@ -183,7 +207,7 @@ Manager route:
 
 - `GET /template-registry-admin/access`
 
-Use this page to switch API on/off and edit token value in `config/template-registry.php`.
+Use this page to switch API on/off, edit token value in `config/template-registry.php`, and manage auto-regenerate plugin state.
 
 ## Important conventions for agents
 

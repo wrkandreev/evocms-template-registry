@@ -33,4 +33,6 @@ Route::prefix($adminPrefix)
         Route::get('/access', [TemplateRegistryAccessModuleController::class, 'index']);
         Route::get('/access/toggle', [TemplateRegistryAccessModuleController::class, 'toggle']);
         Route::post('/access/token', [TemplateRegistryAccessModuleController::class, 'updateToken']);
+        Route::get('/access/plugin/install', [TemplateRegistryAccessModuleController::class, 'installPlugin']);
+        Route::get('/access/plugin/toggle', [TemplateRegistryAccessModuleController::class, 'togglePlugin']);
     });

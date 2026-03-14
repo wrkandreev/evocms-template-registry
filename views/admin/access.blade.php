@@ -62,6 +62,9 @@
     @if(session('statusError'))
         <div class="alert alert-danger">{{ session('statusError') }}</div>
     @endif
+    @if(session('statusWarning'))
+        <div class="alert alert-warning">{{ session('statusWarning') }}</div>
+    @endif
 
     @if($activeTab === 'access')
         <div class="sectionHeader">API Status</div>
@@ -110,6 +113,84 @@
 
         <div class="sectionBody" style="margin-top:1rem;">
             API access remains protected by manager session. Token bypass uses header <code>X-Template-Registry-Token</code>.
+        </div>
+
+        <div class="sectionHeader">Auto-generate plugin</div>
+        <div class="sectionBody">
+            <table class="table data">
+                <tbody>
+                <tr>
+                    <td><strong>Plugin status</strong></td>
+                    <td>
+                        @if(($pluginStatus['exists'] ?? false) === true)
+                            @if(($pluginStatus['enabled'] ?? false) === true)
+                                <span class="label label-success">enabled</span>
+                            @else
+                                <span class="label label-warning">disabled</span>
+                            @endif
+                            <span>#{{ (int) ($pluginStatus['id'] ?? 0) }} {{ (string) ($pluginStatus['name'] ?? '') }}</span>
+                        @else
+                            <span class="label label-danger">not installed</span>
+                        @endif
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Watched events</strong></td>
+                    <td>{{ implode(', ', (array) ($pluginStatus['events_expected'] ?? [])) }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Bound events</strong></td>
+                    <td>
+                        @if(!empty($pluginStatus['events_bound']))
+                            {{ implode(', ', (array) $pluginStatus['events_bound']) }}
+                        @else
+                            -
+                        @endif
+                    </td>
+                </tr>
+                @if(!empty($pluginStatus['events_unbound']))
+                    <tr>
+                        <td><strong>Unbound events</strong></td>
+                        <td>{{ implode(', ', (array) $pluginStatus['events_unbound']) }}</td>
+                    </tr>
+                @endif
+                @if(!empty($pluginStatus['events_missing_in_system']))
+                    <tr>
+                        <td><strong>Missing in system</strong></td>
+                        <td>{{ implode(', ', (array) $pluginStatus['events_missing_in_system']) }}</td>
+                    </tr>
+                @endif
+                </tbody>
+            </table>
+
+            <div class="btn-group">
+                @if(($pluginStatus['exists'] ?? false) !== true)
+                    <a class="btn btn-secondary" href="{{ $pluginInstallUrl }}">
+                        <i class="fa fa-plug"></i>
+                        <span>Install plugin (disabled)</span>
+                    </a>
+                @else
+                    @if(($pluginStatus['enabled'] ?? false) === true)
+                        <a class="btn btn-warning" href="{{ $pluginToggleUrl }}?enabled=0">
+                            <i class="fa fa-pause"></i>
+                            <span>Disable plugin</span>
+                        </a>
+                    @else
+                        <a class="btn btn-success" href="{{ $pluginToggleUrl }}?enabled=1">
+                            <i class="fa fa-play"></i>
+                            <span>Enable plugin</span>
+                        </a>
+                    @endif
+                    <a class="btn btn-secondary" href="{{ $pluginInstallUrl }}">
+                        <i class="fa fa-refresh"></i>
+                        <span>Reinstall plugin</span>
+                    </a>
+                @endif
+            </div>
+
+            <div style="margin-top:0.75rem;">
+                Plugin regenerates registry files on <code>OnTVFormSave</code>, <code>OnTVFormDelete</code>, <code>OnTempFormSave</code>, <code>OnTempFormDelete</code>.
+            </div>
         </div>
     @else
         <div class="sectionHeader">Registry preview</div>

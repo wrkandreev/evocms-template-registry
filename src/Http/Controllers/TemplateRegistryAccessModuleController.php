@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use RuntimeException;
 use WrkAndreev\EvocmsTemplateRegistry\Services\TemplateRegistryGenerator;
 use WrkAndreev\EvocmsTemplateRegistry\Support\ApiAccessStateStore;
+use WrkAndreev\EvocmsTemplateRegistry\Support\RegistryAutogeneratePluginManager;
 
 class TemplateRegistryAccessModuleController
 {
@@ -31,6 +32,9 @@ class TemplateRegistryAccessModuleController
             [$preview, $previewError] = $this->buildPreviewData($config);
         }
 
+        $pluginManager = new RegistryAutogeneratePluginManager();
+        $pluginStatus = $pluginManager->status();
+
         $accessUrl = '/' . $adminPrefix . '/access';
 
         return \view('template-registry::admin.access', [
@@ -39,11 +43,14 @@ class TemplateRegistryAccessModuleController
             'token' => $token,
             'toggleUrl' => '/' . $adminPrefix . '/access/toggle',
             'tokenUrl' => '/' . $adminPrefix . '/access/token',
+            'pluginInstallUrl' => '/' . $adminPrefix . '/access/plugin/install',
+            'pluginToggleUrl' => '/' . $adminPrefix . '/access/plugin/toggle',
             'accessTabUrl' => $accessUrl . '?tab=access',
             'previewTabUrl' => $accessUrl . '?tab=preview',
             'activeTab' => $activeTab,
             'preview' => $preview,
             'previewError' => $previewError,
+            'pluginStatus' => $pluginStatus,
         ]);
     }
 
@@ -71,6 +78,44 @@ class TemplateRegistryAccessModuleController
 
         return \redirect('/' . trim((string) \config('template-registry.api.admin_prefix', 'template-registry-admin'), '/') . '/access')
             ->with('status', 'Access token updated in config.');
+    }
+
+    public function installPlugin()
+    {
+        $manager = new RegistryAutogeneratePluginManager();
+        $result = $manager->install(false);
+
+        $created = (bool) ($result['created'] ?? false);
+        $missingEvents = (array) ($result['missing_events'] ?? []);
+
+        $status = $created
+            ? 'Auto-generate plugin installed (disabled by default).'
+            : 'Auto-generate plugin updated (disabled by default).';
+
+        $redirect = $this->accessTabRedirect();
+        $redirect = $redirect->with('status', $status);
+        if ($missingEvents !== []) {
+            $redirect = $redirect->with('statusWarning', 'Missing system events: ' . implode(', ', $missingEvents));
+        }
+
+        return $redirect;
+    }
+
+    public function togglePlugin(Request $request)
+    {
+        $manager = new RegistryAutogeneratePluginManager();
+        $plugin = $manager->find();
+        if ($plugin === null) {
+            return $this->accessTabRedirect()->with('statusError', 'Auto-generate plugin is not installed.');
+        }
+
+        $enabled = (bool) $request->query('enabled', false);
+        $manager->setEnabled($plugin, $enabled);
+
+        return $this->accessTabRedirect()->with(
+            'status',
+            $enabled ? 'Auto-generate plugin enabled.' : 'Auto-generate plugin disabled.'
+        );
     }
 
     private function writeAccessTokenToConfig(string $token): bool
@@ -130,6 +175,12 @@ class TemplateRegistryAccessModuleController
         }
 
         return $corePath . '/config/template-registry.php';
+    }
+
+    private function accessTabRedirect()
+    {
+        $prefix = trim((string) \config('template-registry.api.admin_prefix', 'template-registry-admin'), '/');
+        return \redirect('/' . $prefix . '/access?tab=access');
     }
 
     /**
