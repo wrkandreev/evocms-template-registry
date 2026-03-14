@@ -112,7 +112,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 
 - `GET /template-registry-admin/access`
 
-На этой странице можно включать/выключать доступ к API и менять access token без ручного редактирования конфига.
+На этой странице можно включать/выключать доступ к API, менять access token без ручного редактирования конфига и смотреть preview сгенерированных сущностей (templates/TV).
 Путь можно изменить через `api.admin_prefix`.
 Если токен уже задан в `config/template-registry.php`, модуль покажет текущее значение.
 

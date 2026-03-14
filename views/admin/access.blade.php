@@ -11,7 +11,11 @@
         .container.container-body { max-width: 980px; }
         .table.data td:first-child { width: 240px; white-space: nowrap; }
         .token-input { max-width: 520px; }
-        #actions { margin-bottom: 1rem; }
+        #actions { margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+        #actions .btn-group { display: flex; gap: 0.5rem; }
+        .module-tabs { margin-bottom: 1rem; }
+        .module-tabs .btn + .btn { margin-left: 0.5rem; }
+        .mono { font-family: Menlo, Monaco, Consolas, "Courier New", monospace; font-size: 12px; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -31,6 +35,25 @@
                 <span>Disable API</span>
             </a>
         </div>
+        @if($activeTab === 'access')
+            <div class="btn-group">
+                <button class="btn btn-primary" type="submit" form="token-form">
+                    <i class="fa fa-save"></i>
+                    <span>Save token</span>
+                </button>
+            </div>
+        @endif
+    </div>
+
+    <div class="module-tabs">
+        <a class="btn {{ $activeTab === 'access' ? 'btn-primary' : 'btn-secondary' }}" href="{{ $accessTabUrl }}">
+            <i class="fa fa-lock"></i>
+            <span>Access</span>
+        </a>
+        <a class="btn {{ $activeTab === 'preview' ? 'btn-primary' : 'btn-secondary' }}" href="{{ $previewTabUrl }}">
+            <i class="fa fa-list"></i>
+            <span>Registry preview</span>
+        </a>
     </div>
 
     @if(session('status'))
@@ -40,58 +63,155 @@
         <div class="alert alert-danger">{{ session('statusError') }}</div>
     @endif
 
-    <div class="sectionHeader">API Status</div>
-    <div class="sectionBody">
-        <table class="table data">
-            <tbody>
-            <tr>
-                <td><strong>Current status</strong></td>
-                <td>
-                    @if($enabled)
-                        <span class="label label-success">enabled</span>
-                    @else
-                        <span class="label label-danger">disabled</span>
-                    @endif
-                </td>
-            </tr>
-            <tr>
-                <td><strong>API base endpoint</strong></td>
-                <td><code>{{ $apiPrefix }}</code></td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="sectionHeader">Access token</div>
-    <div class="sectionBody">
-        <form method="post" action="{{ $tokenUrl }}">
-            @csrf
+    @if($activeTab === 'access')
+        <div class="sectionHeader">API Status</div>
+        <div class="sectionBody">
             <table class="table data">
                 <tbody>
                 <tr>
-                    <td><strong>Header</strong></td>
-                    <td><code>X-Template-Registry-Token</code></td>
+                    <td><strong>Current status</strong></td>
+                    <td>
+                        @if($enabled)
+                            <span class="label label-success">enabled</span>
+                        @else
+                            <span class="label label-danger">disabled</span>
+                        @endif
+                    </td>
                 </tr>
                 <tr>
-                    <td><strong>Token value</strong></td>
-                    <td>
-                        <input class="form-control token-input" id="access_token" name="access_token" type="text" value="{{ $token }}" autocomplete="off" maxlength="512">
-                        <small>Stored in <code>config/template-registry.php</code>. Leave empty to disable token bypass.</small>
-                    </td>
+                    <td><strong>API base endpoint</strong></td>
+                    <td><code>{{ $apiPrefix }}</code></td>
                 </tr>
                 </tbody>
             </table>
+        </div>
 
-            <button class="btn btn-primary" type="submit">
-                <i class="fa fa-save"></i>
-                <span>Save token</span>
-            </button>
-        </form>
-    </div>
+        <div class="sectionHeader">Access token</div>
+        <div class="sectionBody">
+            <form id="token-form" method="post" action="{{ $tokenUrl }}">
+                @csrf
+                <table class="table data">
+                    <tbody>
+                    <tr>
+                        <td><strong>Header</strong></td>
+                        <td><code>X-Template-Registry-Token</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Token value</strong></td>
+                        <td>
+                            <input class="form-control token-input" id="access_token" name="access_token" type="text" value="{{ $token }}" autocomplete="off" maxlength="512">
+                            <small>Stored in <code>config/template-registry.php</code>.<br>Leave empty to disable token bypass.</small>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </form>
+        </div>
 
-    <div class="sectionBody" style="margin-top:1rem;">
-        API access remains protected by manager session. Token bypass uses header <code>X-Template-Registry-Token</code>.
-    </div>
+        <div class="sectionBody" style="margin-top:1rem;">
+            API access remains protected by manager session. Token bypass uses header <code>X-Template-Registry-Token</code>.
+        </div>
+    @else
+        <div class="sectionHeader">Registry preview</div>
+        <div class="sectionBody">
+            @if($previewError)
+                <div class="alert alert-danger">{{ $previewError }}</div>
+            @elseif(is_array($preview))
+                <table class="table data">
+                    <tbody>
+                    <tr>
+                        <td><strong>Generated at</strong></td>
+                        <td>{{ $preview['generated_at'] ?: '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Templates total</strong></td>
+                        <td>{{ (int) ($preview['templates_total'] ?? 0) }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TV total</strong></td>
+                        <td>{{ (int) ($preview['tv_total'] ?? 0) }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            @else
+                <div class="alert alert-warning">Preview is unavailable.</div>
+            @endif
+        </div>
+
+        @if(is_array($preview))
+            <div class="sectionHeader">Templates</div>
+            <div class="sectionBody">
+                @if(($preview['templates_truncated'] ?? false) === true)
+                    <div class="alert alert-warning">Showing first 100 templates.</div>
+                @endif
+                <table class="table data">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Alias</th>
+                        <th>TVs</th>
+                        <th>Controller</th>
+                        <th>View</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach((array) ($preview['templates'] ?? []) as $template)
+                        <tr>
+                            <td>{{ (int) ($template['id'] ?? 0) }}</td>
+                            <td>{{ (string) ($template['name'] ?? '') }}</td>
+                            <td>{{ (string) ($template['alias'] ?? '') }}</td>
+                            <td>{{ (int) ($template['tv_count'] ?? 0) }}</td>
+                            <td>
+                                @if((bool) ($template['controller_exists'] ?? false))
+                                    <span class="label label-success">ok</span>
+                                @else
+                                    <span class="label label-danger">missing</span>
+                                @endif
+                                <div class="mono">{{ (string) ($template['controller_class'] ?? '') }}</div>
+                            </td>
+                            <td>
+                                @if((bool) ($template['view_exists'] ?? false))
+                                    <span class="label label-success">ok</span>
+                                @else
+                                    <span class="label label-danger">missing</span>
+                                @endif
+                                <div class="mono">{{ (string) ($template['view_path'] ?? '') }}</div>
+                            </td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="sectionHeader">TV catalog</div>
+            <div class="sectionBody">
+                @if(($preview['tv_truncated'] ?? false) === true)
+                    <div class="alert alert-warning">Showing first 200 TVs.</div>
+                @endif
+                <table class="table data">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Caption</th>
+                        <th>Type</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach((array) ($preview['tv_catalog'] ?? []) as $tv)
+                        <tr>
+                            <td>{{ (int) ($tv['id'] ?? 0) }}</td>
+                            <td>{{ (string) ($tv['name'] ?? '') }}</td>
+                            <td>{{ (string) ($tv['caption'] ?? '') }}</td>
+                            <td>{{ (string) ($tv['type'] ?? '') }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    @endif
 </div>
 </body>
 </html>
