@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace WrkAndreev\EvocmsTemplateRegistry\Http\Controllers;
 
+use Illuminate\Http\Request;
 use RuntimeException;
 use WrkAndreev\EvocmsTemplateRegistry\Services\ResourceContextResolver;
 use WrkAndreev\EvocmsTemplateRegistry\Services\TemplateRegistryGenerator;
 
 class TemplateRegistryApiController
 {
-    public function index($request)
+    public function index(Request $request)
     {
         try {
             $payload = $this->payload();
@@ -81,7 +82,7 @@ class TemplateRegistryApiController
         }
     }
 
-    public function resourceContext($request)
+    public function resourceContext(Request $request)
     {
         try {
             $payload = $this->payload();
