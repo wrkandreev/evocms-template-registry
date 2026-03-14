@@ -14,6 +14,15 @@
         .btn { display: inline-block; padding: 10px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; }
         .btn-on { background: #0f766e; color: #fff; }
         .btn-off { background: #b91c1c; color: #fff; }
+        .token { margin-top: 22px; border-top: 1px solid #e5e7eb; padding-top: 18px; }
+        .field { margin: 10px 0; }
+        .label { display: block; font-weight: 600; margin-bottom: 6px; }
+        .input { width: 100%; max-width: 520px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; }
+        .hint { font-size: 13px; color: #64748b; margin: 8px 0 0; }
+        .status { margin: 10px 0; padding: 10px 12px; border-radius: 8px; background: #ecfdf5; color: #065f46; }
+        .btn-save { background: #0f172a; color: #fff; border: 0; cursor: pointer; }
+        .btn-light { background: #e2e8f0; color: #0f172a; border: 0; cursor: pointer; }
+        .actions { display: flex; gap: 10px; margin-top: 12px; }
         code { background: #eef2f7; padding: 2px 6px; border-radius: 4px; }
     </style>
 </head>
@@ -36,7 +45,33 @@
         <a class="btn btn-off" href="{{ $toggleUrl }}?enabled=0">Disable API</a>
     </div>
 
-    <p>Note: API access is additionally protected by manager access and optional token from package config.</p>
+    @if(session('status'))
+        <p class="status">{{ session('status') }}</p>
+    @endif
+
+    <div class="token">
+        <h2>Access token</h2>
+        <form method="post" action="{{ $tokenUrl }}">
+            @csrf
+            <div class="field">
+                <label class="label" for="access_token">X-Template-Registry-Token</label>
+                <input class="input" id="access_token" name="access_token" type="text" value="{{ $token }}" autocomplete="off" maxlength="512">
+                <p class="hint">Current source: <code>{{ $tokenSource }}</code>. Leave empty to disable token-based bypass.</p>
+            </div>
+            <div class="actions">
+                <button class="btn btn-save" type="submit">Save token</button>
+            </div>
+        </form>
+        <form method="post" action="{{ $tokenUrl }}">
+            @csrf
+            <input type="hidden" name="reset_to_config" value="1">
+            <div class="actions">
+                <button class="btn btn-light" type="submit">Reset to config token</button>
+            </div>
+        </form>
+    </div>
+
+    <p>Note: API access is protected by manager access. Token bypass uses header <code>X-Template-Registry-Token</code>.</p>
 </div>
 </body>
 </html>

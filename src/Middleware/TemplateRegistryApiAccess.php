@@ -24,9 +24,10 @@ class TemplateRegistryApiAccess
         }
 
         $configuredToken = trim((string) ($api['access_token'] ?? ''));
-        if ($configuredToken !== '') {
+        $accessToken = $stateStore->getAccessToken($configuredToken);
+        if ($accessToken !== '') {
             $requestToken = trim((string) $request->header('X-Template-Registry-Token', ''));
-            if ($requestToken !== '' && hash_equals($configuredToken, $requestToken)) {
+            if ($requestToken !== '' && hash_equals($accessToken, $requestToken)) {
                 return $next($request);
             }
         }

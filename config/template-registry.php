@@ -44,6 +44,6 @@ return [
         'middleware' => ['web'],
         'require_manager' => true,
         'access_token' => '',
-        'admin_prefix' => 'manager/template-registry',
+        'admin_prefix' => 'template-registry-admin',
     ],
 ];

@@ -16,20 +16,41 @@ class ApiAccessStateStore
         return $default;
     }
 
+    public function getAccessToken(string $default): string
+    {
+        $state = $this->readState();
+        if (array_key_exists('access_token', $state)) {
+            return trim((string) $state['access_token']);
+        }
+
+        return trim($default);
+    }
+
+    public function hasTokenOverride(): bool
+    {
+        $state = $this->readState();
+        return array_key_exists('access_token', $state);
+    }
+
     public function setEnabled(bool $enabled): void
     {
-        $path = $this->statePath();
-        $dir = dirname($path);
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0775, true);
-        }
+        $state = $this->readState();
+        $state['enabled'] = $enabled;
+        $this->writeState($state);
+    }
 
-        $payload = json_encode(['enabled' => $enabled], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-        if ($payload === false) {
-            return;
-        }
+    public function setAccessToken(string $token): void
+    {
+        $state = $this->readState();
+        $state['access_token'] = trim($token);
+        $this->writeState($state);
+    }
 
-        file_put_contents($path, $payload . PHP_EOL, LOCK_EX);
+    public function clearAccessTokenOverride(): void
+    {
+        $state = $this->readState();
+        unset($state['access_token']);
+        $this->writeState($state);
     }
 
     /** @return array<string,mixed> */
@@ -62,5 +83,22 @@ class ApiAccessStateStore
         }
 
         return $corePath . '/storage/app/template-registry-api-state.json';
+    }
+
+    /** @param array<string,mixed> $state */
+    private function writeState(array $state): void
+    {
+        $path = $this->statePath();
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        $payload = json_encode($state, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        if ($payload === false) {
+            return;
+        }
+
+        file_put_contents($path, $payload . PHP_EOL, LOCK_EX);
     }
 }

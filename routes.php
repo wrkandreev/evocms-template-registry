@@ -25,11 +25,12 @@ Route::prefix($apiPrefix)
         Route::get('/resource-context', [TemplateRegistryApiController::class, 'resourceContext']);
     });
 
-$adminPrefix = trim((string) ($apiConfig['admin_prefix'] ?? 'manager/template-registry'), '/');
+$adminPrefix = trim((string) ($apiConfig['admin_prefix'] ?? 'template-registry-admin'), '/');
 
 Route::prefix($adminPrefix)
     ->middleware(['web', TemplateRegistryManagerAccess::class])
     ->group(function (): void {
         Route::get('/access', [TemplateRegistryAccessModuleController::class, 'index']);
         Route::get('/access/toggle', [TemplateRegistryAccessModuleController::class, 'toggle']);
+        Route::post('/access/token', [TemplateRegistryAccessModuleController::class, 'updateToken']);
     });

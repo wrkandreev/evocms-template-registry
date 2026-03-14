@@ -64,7 +64,7 @@ class InstallTemplateRegistryModuleCommand extends Command
     {
         return <<<'PHP'
 <?php
-$prefix = trim((string) config('template-registry.api.admin_prefix', 'manager/template-registry'), '/');
+$prefix = trim((string) config('template-registry.api.admin_prefix', 'template-registry-admin'), '/');
 $url = '/' . $prefix . '/access';
 
 echo '<iframe src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" style="width:100%;min-height:75vh;border:0;border-radius:6px;background:#fff"></iframe>';

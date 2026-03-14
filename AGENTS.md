@@ -126,15 +126,15 @@ Access is protected by middleware:
 - `api.middleware` route middleware list
 - `api.require_manager` require manager auth (`true` by default)
 - `api.access_token` optional token for local tools (header: `X-Template-Registry-Token`)
-- `api.admin_prefix` manager page prefix
+- `api.admin_prefix` module page prefix (default `template-registry-admin`)
 
 ### Runtime state file
 
-The manager toggle writes runtime state here:
+Manager page writes runtime state here (enabled flag and optional token override):
 
 - `core/storage/app/template-registry-api-state.json`
 
-If file does not exist, default comes from `api.enabled`.
+If file does not exist, defaults come from config (`api.enabled`, `api.access_token`).
 
 ## Optional ClientSettings integration
 
@@ -181,9 +181,10 @@ Must cover at least:
 
 Manager route:
 
-- `GET /manager/template-registry/access`
+- `GET /template-registry-admin/access`
 
-Use this page to switch API on/off without editing config.
+Use this page to switch API on/off and edit runtime token without editing config.
+Manager page also allows resetting runtime token override back to config value.
 
 ## Important conventions for agents
 
