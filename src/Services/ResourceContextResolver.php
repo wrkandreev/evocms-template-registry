@@ -77,24 +77,7 @@ class ResourceContextResolver
             throw new RuntimeException('Required resource table not found (site_content).');
         }
 
-        $hasUriColumn = Schema::hasColumn($contentTable, 'uri');
-        $hasPublishedColumn = Schema::hasColumn($contentTable, 'published');
-        $hasDeletedColumn = Schema::hasColumn($contentTable, 'deleted');
-        $hasParentColumn = Schema::hasColumn($contentTable, 'parent');
-
-        $columns = ['id', 'pagetitle', 'longtitle', 'alias', 'template'];
-        if ($hasUriColumn) {
-            $columns[] = 'uri';
-        }
-        if ($hasPublishedColumn) {
-            $columns[] = 'published';
-        }
-        if ($hasDeletedColumn) {
-            $columns[] = 'deleted';
-        }
-        if ($hasParentColumn) {
-            $columns[] = 'parent';
-        }
+        $columns = $this->resourceListColumns($contentTable);
 
         $rows = DB::table($contentTable)
             ->select($columns)
@@ -121,17 +104,88 @@ class ResourceContextResolver
 
             $result[] = [
                 'id' => (int) ($row->id ?? 0),
+                'type' => (string) ($row->type ?? ''),
+                'content_type' => (string) ($row->contentType ?? ''),
                 'pagetitle' => (string) ($row->pagetitle ?? ''),
                 'longtitle' => (string) ($row->longtitle ?? ''),
+                'description' => (string) ($row->description ?? ''),
                 'alias' => (string) ($row->alias ?? ''),
+                'link_attributes' => (string) ($row->link_attributes ?? ''),
                 'uri' => (string) ($row->uri ?? ''),
+                'introtext' => (string) ($row->introtext ?? ''),
                 'template_id' => $templateId,
                 'template_name' => is_array($template) ? (string) ($template['name'] ?? '') : '',
                 'template_alias' => is_array($template) ? (string) ($template['alias'] ?? '') : '',
+                'menuindex' => isset($row->menuindex) ? (int) $row->menuindex : null,
                 'published' => isset($row->published) ? (bool) $row->published : null,
+                'pub_date' => isset($row->pub_date) ? (int) $row->pub_date : null,
+                'unpub_date' => isset($row->unpub_date) ? (int) $row->unpub_date : null,
                 'deleted' => isset($row->deleted) ? (bool) $row->deleted : null,
+                'isfolder' => isset($row->isfolder) ? (bool) $row->isfolder : null,
                 'parent' => isset($row->parent) ? (int) $row->parent : null,
+                'richtext' => isset($row->richtext) ? (bool) $row->richtext : null,
+                'searchable' => isset($row->searchable) ? (bool) $row->searchable : null,
+                'cacheable' => isset($row->cacheable) ? (bool) $row->cacheable : null,
+                'createdon' => isset($row->createdon) ? (int) $row->createdon : null,
+                'editedon' => isset($row->editedon) ? (int) $row->editedon : null,
+                'deletedon' => isset($row->deletedon) ? (int) $row->deletedon : null,
+                'publishedon' => isset($row->publishedon) ? (int) $row->publishedon : null,
+                'menutitle' => (string) ($row->menutitle ?? ''),
+                'hide_from_tree' => isset($row->hide_from_tree) ? (bool) $row->hide_from_tree : null,
+                'privateweb' => isset($row->privateweb) ? (bool) $row->privateweb : null,
+                'privatemgr' => isset($row->privatemgr) ? (bool) $row->privatemgr : null,
+                'content_dispo' => isset($row->content_dispo) ? (int) $row->content_dispo : null,
+                'hidemenu' => isset($row->hidemenu) ? (bool) $row->hidemenu : null,
+                'alias_visible' => isset($row->alias_visible) ? (bool) $row->alias_visible : null,
             ];
+        }
+
+        return $result;
+    }
+
+    /** @return array<int,string> */
+    private function resourceListColumns(string $contentTable): array
+    {
+        $candidates = [
+            'id',
+            'type',
+            'contentType',
+            'pagetitle',
+            'longtitle',
+            'description',
+            'alias',
+            'link_attributes',
+            'published',
+            'pub_date',
+            'unpub_date',
+            'parent',
+            'isfolder',
+            'introtext',
+            'richtext',
+            'template',
+            'menuindex',
+            'searchable',
+            'cacheable',
+            'createdon',
+            'editedon',
+            'deleted',
+            'deletedon',
+            'publishedon',
+            'menutitle',
+            'hide_from_tree',
+            'privateweb',
+            'privatemgr',
+            'content_dispo',
+            'hidemenu',
+            'alias_visible',
+            'uri',
+        ];
+
+        $result = [];
+        foreach ($candidates as $column) {
+            if (Schema::hasColumn($contentTable, $column)) {
+                $result[] = $column;
+            }
         }
 
         return $result;

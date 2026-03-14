@@ -115,7 +115,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - `GET /api/template-registry/templates` только шаблоны
 - `GET /api/template-registry/templates/{id}` один шаблон по id
 - `GET /api/template-registry/tvs` только каталог TV
-- `GET /api/template-registry/resources` список ресурсов с template meta
+- `GET /api/template-registry/resources` список ресурсов с template meta и основными системными полями
 - `GET /api/template-registry/stats` только статистика
 - `GET /api/template-registry/resource-context` контекст ресурс/шаблон/TV по URL или id
 
@@ -139,7 +139,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 
 - `GET /template-registry-admin/access`
 
-На этой странице можно включать/выключать доступ к API, менять access token без ручного редактирования конфига и смотреть preview сгенерированных сущностей (templates/TV/resources).
+На этой странице можно включать/выключать доступ к API, менять access token без ручного редактирования конфига и смотреть preview сгенерированных сущностей (templates/TV/resources/ClientSettings).
 Там же отображается состояние плагина автогенерации и кнопки его установки/включения/выключения.
 Путь можно изменить через `api.admin_prefix`.
 Если токен уже задан в `config/template-registry.php`, модуль покажет текущее значение.

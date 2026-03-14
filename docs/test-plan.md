@@ -73,7 +73,7 @@ Validate safe behavior of template registry generation and API with optional Cli
 8. Resources endpoint
 
 - Call `GET /api/template-registry/resources`.
-- Verify response is a list of created resources with `id`, `pagetitle`, `alias`, `template_id`, `template_name`.
+- Verify response is a list of created resources with `id`, `pagetitle`, `alias`, `template_id`, `template_name` and system fields like `menuindex`, `introtext`, `published`, `deleted`.
 - Call `GET /api/template-registry/resources?limit=1` and verify limit is applied.
 
 9. Auto-regenerate plugin

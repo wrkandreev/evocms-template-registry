@@ -127,6 +127,8 @@ Resource context for local AI/tools:
 - `GET /api/template-registry/resource-context?url=/path/to/resource`
 - `GET /api/template-registry/resource-context?resource_id=123`
 
+`resources` returns created resources with template meta and key system fields useful for admin/tooling context.
+
 `resource-context` returns resource meta, matched template, available TVs and current TV values.
 Use this endpoint when agent needs exact context for one page/resource.
 

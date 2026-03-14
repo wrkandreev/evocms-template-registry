@@ -17,6 +17,10 @@
         .module-tabs .btn + .btn { margin-left: 0.5rem; }
         .mono { font-family: Menlo, Monaco, Consolas, "Courier New", monospace; font-size: 12px; word-break: break-all; }
         .field-select { max-width: 260px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.75rem; }
+        .stat-card { border: 1px solid #dcdcdc; background: #fff; padding: 0.75rem 1rem; }
+        .stat-card .value { font-size: 22px; font-weight: 700; line-height: 1.1; }
+        .stat-card .label { margin-top: 0.25rem; color: #666; }
     </style>
 </head>
 <body>
@@ -144,6 +148,24 @@
             @if($previewError)
                 <div class="alert alert-danger">{{ $previewError }}</div>
             @elseif(is_array($preview))
+                <div class="stats-grid" style="margin-bottom:1rem;">
+                    <div class="stat-card">
+                        <div class="value">{{ (int) ($preview['templates_total'] ?? 0) }}</div>
+                        <div class="label">Templates</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value">{{ (int) ($preview['tv_total'] ?? 0) }}</div>
+                        <div class="label">TVs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value">{{ (int) ($preview['resources_total'] ?? 0) }}</div>
+                        <div class="label">Resources shown</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value">@if((bool) (($preview['client_settings']['exists'] ?? false))) yes @else no @endif</div>
+                        <div class="label">ClientSettings</div>
+                    </div>
+                </div>
                 <table class="table data">
                     <tbody>
                     <tr>
@@ -151,16 +173,12 @@
                         <td>{{ $preview['generated_at'] ?: '-' }}</td>
                     </tr>
                     <tr>
-                        <td><strong>Templates total</strong></td>
-                        <td>{{ (int) ($preview['templates_total'] ?? 0) }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>TV total</strong></td>
-                        <td>{{ (int) ($preview['tv_total'] ?? 0) }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Resources shown</strong></td>
-                        <td>{{ (int) ($preview['resources_total'] ?? 0) }}</td>
+                        <td><strong>Project stats</strong></td>
+                        <td>
+                            templates: {{ (int) ($preview['templates_total'] ?? 0) }},
+                            tvs: {{ (int) ($preview['tv_total'] ?? 0) }},
+                            resources shown: {{ (int) ($preview['resources_total'] ?? 0) }}
+                        </td>
                     </tr>
                     </tbody>
                 </table>
@@ -252,37 +270,159 @@
                     <tr>
                         <th>ID</th>
                         <th>Page title</th>
+                        <th>Menu</th>
                         <th>Alias</th>
-                        <th>URI</th>
                         <th>Template</th>
-                        <th>Published</th>
-                        <th>Deleted</th>
+                        <th>Flags</th>
+                        <th>System fields</th>
                     </tr>
                     </thead>
                     <tbody>
                     @foreach((array) ($preview['resources'] ?? []) as $resource)
                         <tr>
                             <td>{{ (int) ($resource['id'] ?? 0) }}</td>
-                            <td>{{ (string) ($resource['pagetitle'] ?? '') }}</td>
-                            <td>{{ (string) ($resource['alias'] ?? '') }}</td>
-                            <td>{{ (string) ($resource['uri'] ?? '') }}</td>
-                            <td>#{{ (int) ($resource['template_id'] ?? 0) }} {{ (string) ($resource['template_name'] ?? '') }}</td>
                             <td>
-                                @if(($resource['published'] ?? null) === null)
-                                    -
-                                @elseif((bool) ($resource['published'] ?? false))
-                                    <span class="label label-success">yes</span>
-                                @else
-                                    <span class="label label-warning">no</span>
+                                <strong>{{ (string) ($resource['pagetitle'] ?? '') }}</strong>
+                                @if((string) ($resource['longtitle'] ?? '') !== '')
+                                    <div>{{ (string) ($resource['longtitle'] ?? '') }}</div>
+                                @endif
+                                @if((string) ($resource['description'] ?? '') !== '')
+                                    <div class="mono">desc: {{ (string) ($resource['description'] ?? '') }}</div>
+                                @endif
+                                @if((string) ($resource['introtext'] ?? '') !== '')
+                                    <div class="mono">intro: {{ (string) ($resource['introtext'] ?? '') }}</div>
                                 @endif
                             </td>
                             <td>
-                                @if(($resource['deleted'] ?? null) === null)
-                                    -
-                                @elseif((bool) ($resource['deleted'] ?? false))
-                                    <span class="label label-danger">yes</span>
+                                menuindex: {{ $resource['menuindex'] ?? '-' }}<br>
+                                parent: {{ $resource['parent'] ?? '-' }}
+                            </td>
+                            <td>{{ (string) ($resource['alias'] ?? '') }}</td>
+                            <td>
+                                #{{ (int) ($resource['template_id'] ?? 0) }} {{ (string) ($resource['template_name'] ?? '') }}
+                                @if((string) ($resource['uri'] ?? '') !== '')
+                                    <div class="mono">{{ (string) ($resource['uri'] ?? '') }}</div>
+                                @endif
+                            </td>
+                            <td>
+                                @if(($resource['published'] ?? null) === true)<span class="label label-success">published</span>@elseif(($resource['published'] ?? null) === false)<span class="label label-warning">unpublished</span>@endif
+                                @if(($resource['deleted'] ?? null) === true)<span class="label label-danger">deleted</span>@endif
+                                @if(($resource['isfolder'] ?? null) === true)<span class="label label-default">folder</span>@endif
+                                @if(($resource['hidemenu'] ?? null) === true)<span class="label label-default">hide menu</span>@endif
+                                @if(($resource['hide_from_tree'] ?? null) === true)<span class="label label-default">hide tree</span>@endif
+                            </td>
+                            <td>
+                                <div class="mono">
+                                    type={{ (string) ($resource['type'] ?? '') }}
+                                    contentType={{ (string) ($resource['content_type'] ?? '') }}
+                                    richtext={{ is_bool($resource['richtext'] ?? null) ? ((bool) $resource['richtext'] ? '1' : '0') : '-' }}
+                                    searchable={{ is_bool($resource['searchable'] ?? null) ? ((bool) $resource['searchable'] ? '1' : '0') : '-' }}
+                                    cacheable={{ is_bool($resource['cacheable'] ?? null) ? ((bool) $resource['cacheable'] ? '1' : '0') : '-' }}
+                                    alias_visible={{ is_bool($resource['alias_visible'] ?? null) ? ((bool) $resource['alias_visible'] ? '1' : '0') : '-' }}
+                                </div>
+                                <div class="mono">
+                                    menutitle={{ (string) ($resource['menutitle'] ?? '') !== '' ? (string) ($resource['menutitle'] ?? '') : '-' }}
+                                    privateweb={{ is_bool($resource['privateweb'] ?? null) ? ((bool) $resource['privateweb'] ? '1' : '0') : '-' }}
+                                    privatemgr={{ is_bool($resource['privatemgr'] ?? null) ? ((bool) $resource['privatemgr'] ? '1' : '0') : '-' }}
+                                    content_dispo={{ $resource['content_dispo'] ?? '-' }}
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="sectionHeader">ClientSettings</div>
+            <div class="sectionBody">
+                @if((bool) (($preview['client_settings']['exists'] ?? false)) === false)
+                    <div class="alert alert-warning">ClientSettings config directory not found.</div>
+                @endif
+                <table class="table data">
+                    <tbody>
+                    <tr>
+                        <td><strong>Exists</strong></td>
+                        <td>@if((bool) (($preview['client_settings']['exists'] ?? false))) yes @else no @endif</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Stats</strong></td>
+                        <td>
+                            @php($csStats = (array) (($preview['client_settings']['stats'] ?? [])))
+                            tabs_total: {{ (int) ($csStats['tabs_total'] ?? 0) }},
+                            tabs_valid: {{ (int) ($csStats['tabs_valid'] ?? 0) }},
+                            tabs_invalid: {{ (int) ($csStats['tabs_invalid'] ?? 0) }},
+                            fields_total: {{ (int) ($csStats['fields_total'] ?? 0) }},
+                            selector_fields_total: {{ (int) ($csStats['selector_fields_total'] ?? 0) }}
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                @if(($preview['client_settings']['tabs_truncated'] ?? false) === true)
+                    <div class="alert alert-warning">Showing first 50 ClientSettings tabs.</div>
+                @endif
+                <table class="table data">
+                    <thead>
+                    <tr>
+                        <th>Tab</th>
+                        <th>Fields</th>
+                        <th>Status</th>
+                        <th>Source</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach((array) (($preview['client_settings']['tabs'] ?? [])) as $tab)
+                        <tr>
+                            <td>{{ (string) ($tab['name'] ?? '') }}</td>
+                            <td>{{ (int) ($tab['fields_count'] ?? 0) }}</td>
+                            <td>
+                                @if((bool) ($tab['valid'] ?? false))
+                                    <span class="label label-success">valid</span>
                                 @else
-                                    <span class="label label-success">no</span>
+                                    <span class="label label-danger">invalid</span>
+                                    @if((string) ($tab['error'] ?? '') !== '')
+                                        <div class="mono">{{ (string) ($tab['error'] ?? '') }}</div>
+                                    @endif
+                                @endif
+                            </td>
+                            <td><div class="mono">{{ (string) ($tab['source_file'] ?? '') }}</div></td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+
+                @if(($preview['client_settings']['fields_truncated'] ?? false) === true)
+                    <div class="alert alert-warning">Showing first 200 ClientSettings fields.</div>
+                @endif
+                <table class="table data">
+                    <thead>
+                    <tr>
+                        <th>Tab</th>
+                        <th>Name</th>
+                        <th>Caption</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Selector</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach((array) (($preview['client_settings']['fields'] ?? [])) as $field)
+                        <tr>
+                            <td>{{ (string) ($field['tab_id'] ?? '') }}</td>
+                            <td>{{ (string) ($field['name'] ?? '') }}</td>
+                            <td>{{ (string) ($field['caption'] ?? '') }}</td>
+                            <td>{{ (string) ($field['type'] ?? '') }}</td>
+                            <td>@if((bool) ($field['required'] ?? false)) yes @else no @endif</td>
+                            <td>
+                                @if((string) ($field['selector_controller'] ?? '') !== '')
+                                    {{ (string) ($field['selector_controller'] ?? '') }}
+                                    @if((bool) ($field['selector_exists'] ?? false))
+                                        <span class="label label-success">ok</span>
+                                    @else
+                                        <span class="label label-danger">missing</span>
+                                    @endif
+                                @else
+                                    -
                                 @endif
                             </td>
                         </tr>
