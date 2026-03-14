@@ -86,7 +86,7 @@
                         <td><strong>Token value</strong></td>
                         <td>
                             <input class="form-control token-input" id="access_token" name="access_token" type="text" value="{{ $token }}" autocomplete="off" maxlength="512">
-                            <small>Stored in <code>config/template-registry.php</code>.<br>Leave empty to disable token bypass.</small>
+                            <small>Stored in <code>custom/config/template-registry.php</code>.<br>Leave empty to disable token bypass.</small>
                         </td>
                     </tr>
                     <tr>

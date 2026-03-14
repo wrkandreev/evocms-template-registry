@@ -114,7 +114,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - требуется manager-сессия (`api.require_manager = true`)
 - API можно глобально включать/выключать через модуль в менеджере
 - опционально можно использовать токен для локальных инструментов (заголовок `X-Template-Registry-Token`)
-- токен можно редактировать на странице модуля (значение записывается в `config/template-registry.php`)
+- токен можно редактировать на странице модуля (значение записывается в `custom/config/template-registry.php`)
 
 Эндпоинты по умолчанию:
 
@@ -164,7 +164,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 На этой странице можно включать/выключать доступ к API, менять access token без ручного редактирования конфига и смотреть preview сгенерированных сущностей (templates/TV/resources/ClientSettings).
 Там же отображается состояние плагина автогенерации и кнопки его установки/включения/выключения.
 Путь можно изменить через `api.admin_prefix`.
-Если токен уже задан в `config/template-registry.php`, модуль покажет текущее значение.
+Если токен уже задан в `custom/config/template-registry.php`, модуль покажет текущее значение.
 
 Чтобы зарегистрировать эту страницу как пункт модуля (меню Modules), выполните:
 
@@ -243,7 +243,7 @@ ClientSettings не является обязательным.
 
 ## Конфигурация
 
-Файл конфига: `config/template-registry.php`.
+Файл конфига: `core/custom/config/template-registry.php`.
 
 Основные настройки:
 

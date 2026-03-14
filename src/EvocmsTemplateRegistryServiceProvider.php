@@ -15,10 +15,19 @@ class EvocmsTemplateRegistryServiceProvider extends ServiceProvider
 {
     public function register()
     {
-        $configPath = dirname(__DIR__) . '/config/template-registry.php';
+        $packageConfigPath = dirname(__DIR__) . '/config/template-registry.php';
+        $customConfigPath = $this->customConfigPath();
 
         if (method_exists($this, 'mergeConfigFrom')) {
-            $this->mergeConfigFrom($configPath, 'template-registry');
+            $this->mergeConfigFrom($packageConfigPath, 'template-registry');
+        }
+
+        if (is_file($customConfigPath)) {
+            $customConfig = require $customConfigPath;
+            if (is_array($customConfig)) {
+                $current = (array) $this->app['config']->get('template-registry', []);
+                $this->app['config']->set('template-registry', array_replace_recursive($current, $customConfig));
+            }
         }
 
         if ($this->app->runningInConsole()) {
@@ -30,9 +39,9 @@ class EvocmsTemplateRegistryServiceProvider extends ServiceProvider
                 UninstallTemplateRegistryPluginCommand::class,
             ]);
 
-            if (method_exists($this, 'publishes') && function_exists('config_path')) {
+            if (method_exists($this, 'publishes')) {
                 $this->publishes([
-                    $configPath => config_path('template-registry.php'),
+                    $packageConfigPath => $customConfigPath,
                 ], 'evocms-template-registry-config');
             }
         }
@@ -47,5 +56,15 @@ class EvocmsTemplateRegistryServiceProvider extends ServiceProvider
         if (method_exists($this, 'loadViewsFrom')) {
             $this->loadViewsFrom(dirname(__DIR__) . '/views', 'template-registry');
         }
+    }
+
+    private function customConfigPath(): string
+    {
+        if (function_exists('base_path')) {
+            return rtrim((string) \base_path('custom/config/template-registry.php'), '/');
+        }
+
+        $basePath = getcwd() ?: '';
+        return rtrim($basePath, '/') . '/custom/config/template-registry.php';
     }
 }

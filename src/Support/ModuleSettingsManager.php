@@ -115,6 +115,6 @@ class ModuleSettingsManager
             $corePath .= '/core';
         }
 
-        return $corePath . '/config/template-registry.php';
+        return $corePath . '/custom/config/template-registry.php';
     }
 }

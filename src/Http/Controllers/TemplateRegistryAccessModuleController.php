@@ -62,7 +62,7 @@ class TemplateRegistryAccessModuleController
 
         if ($result['success'] !== true) {
             return $this->accessTabRedirect()
-                ->with('statusError', 'Failed to update config/template-registry.php');
+                ->with('statusError', 'Failed to update custom/config/template-registry.php');
         }
 
         $redirect = $this->accessTabRedirect()->with('status', 'Settings saved.');

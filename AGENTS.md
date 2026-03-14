@@ -34,6 +34,10 @@ Optional config publish:
 php artisan vendor:publish --provider="WrkAndreev\EvocmsTemplateRegistry\EvocmsTemplateRegistryServiceProvider" --tag="evocms-template-registry-config"
 ```
 
+Published config path:
+
+- `core/custom/config/template-registry.php`
+
 ## Main commands
 
 Generate registry files:
@@ -158,7 +162,7 @@ Access is protected by middleware:
 2. Optional token bypass for local tools
 3. Manager session check (default)
 
-### Config keys (`config/template-registry.php`)
+### Config keys (`core/custom/config/template-registry.php`)
 
 - `api.enabled` default enabled value
 - `api.prefix` API route prefix
@@ -225,7 +229,7 @@ Manager route:
 
 - `GET /template-registry-admin/access`
 
-Use this page to switch API on/off, edit token value in `config/template-registry.php`, and manage auto-regenerate plugin state.
+Use this page to switch API on/off, edit token value in `custom/config/template-registry.php`, and manage auto-regenerate plugin state.
 
 ## Important conventions for agents
 
