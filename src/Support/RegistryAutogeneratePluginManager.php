@@ -10,7 +10,10 @@ use EvolutionCMS\Models\SystemEventname;
 
 class RegistryAutogeneratePluginManager
 {
-    public const GUID = 'template-registry-auto-generate-plugin';
+    public const GUID = 'template-registry-autogen';
+    private const LEGACY_GUIDS = [
+        'template-registry-auto-generate-',
+    ];
     public const DEFAULT_NAME = 'Template Registry Auto Generate';
     public const DEFAULT_DESCRIPTION = 'Auto-generate template registry on TV/template save/delete';
 
@@ -27,7 +30,7 @@ class RegistryAutogeneratePluginManager
 
     public function find(?string $fallbackName = null): ?SitePlugin
     {
-        $query = SitePlugin::query()->where('moduleguid', self::GUID);
+        $query = SitePlugin::query()->whereIn('moduleguid', $this->guidCandidates());
         $plugin = $query->first();
         if ($plugin !== null) {
             return $plugin;
@@ -95,7 +98,7 @@ class RegistryAutogeneratePluginManager
 
     public function uninstall(?string $fallbackName = null): int
     {
-        $query = SitePlugin::query()->where('moduleguid', self::GUID);
+        $query = SitePlugin::query()->whereIn('moduleguid', $this->guidCandidates());
 
         $name = trim((string) $fallbackName);
         if ($name !== '') {
@@ -240,5 +243,11 @@ try {
     }
 }
 PHP;
+    }
+
+    /** @return array<int,string> */
+    private function guidCandidates(): array
+    {
+        return array_merge([self::GUID], self::LEGACY_GUIDS);
     }
 }
