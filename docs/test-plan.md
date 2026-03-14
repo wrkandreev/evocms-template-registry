@@ -70,7 +70,13 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Call `GET /api/template-registry/resource-context?url=<existing_resource_url_path>` and compare resolved resource id.
 - Call endpoint with unknown url/id and verify `404` with `code = resource_not_found`.
 
-8. Auto-regenerate plugin
+8. Resources endpoint
+
+- Call `GET /api/template-registry/resources`.
+- Verify response is a list of created resources with `id`, `pagetitle`, `alias`, `template_id`, `template_name`.
+- Call `GET /api/template-registry/resources?limit=1` and verify limit is applied.
+
+9. Auto-regenerate plugin
 
 - Run `php core/artisan template-registry:plugin:install` and verify plugin is created as disabled.
 - Enable plugin (from module page or `template-registry:plugin:install --enabled`).

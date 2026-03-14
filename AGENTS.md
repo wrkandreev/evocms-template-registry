@@ -114,6 +114,7 @@ Default prefix: `/api/template-registry`
 - `GET /api/template-registry/templates`
 - `GET /api/template-registry/templates/{id}`
 - `GET /api/template-registry/tvs`
+- `GET /api/template-registry/resources`
 - `GET /api/template-registry/stats`
 - `GET /api/template-registry/resource-context`
 

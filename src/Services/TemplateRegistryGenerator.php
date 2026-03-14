@@ -237,21 +237,8 @@ class TemplateRegistryGenerator
             ];
         }
 
-        $rawAlias = trim($alias);
-        $normalizedAlias = (bool) $this->cfg('normalize_alias_dashes', true)
-            ? str_replace('-', '_', $rawAlias)
-            : $rawAlias;
-
-        $pattern = (string) $this->cfg('fallback_view_pattern', 'views/{alias}.blade.php');
-        $names = [str_replace('{alias}', $normalizedAlias, $pattern)];
-        $alternateAlias = str_replace('_', '-', $rawAlias);
-        $alternateName = str_replace('{alias}', $alternateAlias, $pattern);
-        if (!in_array($alternateName, $names, true)) {
-            $names[] = $alternateName;
-        }
-
         return [
-            'names' => $names,
+            'names' => $this->resolveConventionalViewNames($alias),
             'source' => 'convention',
         ];
     }
@@ -259,8 +246,45 @@ class TemplateRegistryGenerator
     /** @param array{names:array<int,string>,source:string} $view */
     private function resolveViewPath(array $view): array
     {
+        $resolved = $this->resolveViewCandidates((array) ($view['names'] ?? []));
+
+        foreach ($resolved as [$absolutePath, $name]) {
+            if (is_file($absolutePath)) {
+                return [$absolutePath, $name];
+            }
+        }
+
+        return $resolved[0] ?? [$this->projectRootPath('views/' . trim((string) ($view['names'][0] ?? 'unknown.blade.php'), '/')), (string) ($view['names'][0] ?? '')];
+    }
+
+    /** @return array<int,string> */
+    private function resolveConventionalViewNames(string $alias): array
+    {
+        $rawAlias = trim($alias);
+        $normalizedAlias = (bool) $this->cfg('normalize_alias_dashes', true)
+            ? str_replace('-', '_', $rawAlias)
+            : $rawAlias;
+
+        $pattern = (string) $this->cfg('fallback_view_pattern', 'views/{alias}.blade.php');
+        $names = [str_replace('{alias}', $normalizedAlias, $pattern)];
+
+        $alternateAlias = str_replace('_', '-', $rawAlias);
+        $alternateName = str_replace('{alias}', $alternateAlias, $pattern);
+        if (!in_array($alternateName, $names, true)) {
+            $names[] = $alternateName;
+        }
+
+        return $names;
+    }
+
+    /**
+     * @param array<int,mixed> $viewNames
+     * @return array<int,array{0:string,1:string}>
+     */
+    private function resolveViewCandidates(array $viewNames): array
+    {
         $resolved = [];
-        foreach ((array) ($view['names'] ?? []) as $viewName) {
+        foreach ($viewNames as $viewName) {
             if (!is_string($viewName) || trim($viewName) === '') {
                 continue;
             }
@@ -273,13 +297,7 @@ class TemplateRegistryGenerator
             $resolved[] = [$this->projectRootPath($viewName), $viewName];
         }
 
-        foreach ($resolved as [$absolutePath, $name]) {
-            if (is_file($absolutePath)) {
-                return [$absolutePath, $name];
-            }
-        }
-
-        return $resolved[0] ?? [$this->projectRootPath('views/' . trim((string) ($view['names'][0] ?? 'unknown.blade.php'), '/')), (string) ($view['names'][0] ?? '')];
+        return $resolved;
     }
 
     private function isPlaceholderView(string $path): bool

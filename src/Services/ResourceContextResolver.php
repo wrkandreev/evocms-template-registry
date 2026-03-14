@@ -66,6 +66,77 @@ class ResourceContextResolver
         ];
     }
 
+    /**
+     * @param array<string,mixed> $payload
+     * @return array<int,array<string,mixed>>
+     */
+    public function listResources(array $payload, int $limit = 100): array
+    {
+        $contentTable = $this->resolveTableName((string) $this->cfg('resources_table', 'site_content'));
+        if ($contentTable === null) {
+            throw new RuntimeException('Required resource table not found (site_content).');
+        }
+
+        $hasUriColumn = Schema::hasColumn($contentTable, 'uri');
+        $hasPublishedColumn = Schema::hasColumn($contentTable, 'published');
+        $hasDeletedColumn = Schema::hasColumn($contentTable, 'deleted');
+        $hasParentColumn = Schema::hasColumn($contentTable, 'parent');
+
+        $columns = ['id', 'pagetitle', 'longtitle', 'alias', 'template'];
+        if ($hasUriColumn) {
+            $columns[] = 'uri';
+        }
+        if ($hasPublishedColumn) {
+            $columns[] = 'published';
+        }
+        if ($hasDeletedColumn) {
+            $columns[] = 'deleted';
+        }
+        if ($hasParentColumn) {
+            $columns[] = 'parent';
+        }
+
+        $rows = DB::table($contentTable)
+            ->select($columns)
+            ->orderBy('id')
+            ->limit(max(1, $limit))
+            ->get();
+
+        $templatesById = [];
+        foreach ((array) ($payload['templates'] ?? []) as $template) {
+            if (!is_array($template)) {
+                continue;
+            }
+
+            $templateId = (int) ($template['id'] ?? 0);
+            if ($templateId > 0) {
+                $templatesById[$templateId] = $template;
+            }
+        }
+
+        $result = [];
+        foreach ($rows as $row) {
+            $templateId = (int) ($row->template ?? 0);
+            $template = $templatesById[$templateId] ?? null;
+
+            $result[] = [
+                'id' => (int) ($row->id ?? 0),
+                'pagetitle' => (string) ($row->pagetitle ?? ''),
+                'longtitle' => (string) ($row->longtitle ?? ''),
+                'alias' => (string) ($row->alias ?? ''),
+                'uri' => (string) ($row->uri ?? ''),
+                'template_id' => $templateId,
+                'template_name' => is_array($template) ? (string) ($template['name'] ?? '') : '',
+                'template_alias' => is_array($template) ? (string) ($template['alias'] ?? '') : '',
+                'published' => isset($row->published) ? (bool) $row->published : null,
+                'deleted' => isset($row->deleted) ? (bool) $row->deleted : null,
+                'parent' => isset($row->parent) ? (int) $row->parent : null,
+            ];
+        }
+
+        return $result;
+    }
+
     private function findResource(string $contentTable, mixed $resourceId, mixed $url): ?object
     {
         $hasUriColumn = Schema::hasColumn($contentTable, 'uri');

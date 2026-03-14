@@ -158,6 +158,10 @@
                         <td><strong>TV total</strong></td>
                         <td>{{ (int) ($preview['tv_total'] ?? 0) }}</td>
                     </tr>
+                    <tr>
+                        <td><strong>Resources shown</strong></td>
+                        <td>{{ (int) ($preview['resources_total'] ?? 0) }}</td>
+                    </tr>
                     </tbody>
                 </table>
             @else
@@ -232,6 +236,55 @@
                             <td>{{ (string) ($tv['name'] ?? '') }}</td>
                             <td>{{ (string) ($tv['caption'] ?? '') }}</td>
                             <td>{{ (string) ($tv['type'] ?? '') }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="sectionHeader">Resources</div>
+            <div class="sectionBody">
+                @if(($preview['resources_truncated'] ?? false) === true)
+                    <div class="alert alert-warning">Showing first 100 resources.</div>
+                @endif
+                <table class="table data">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Page title</th>
+                        <th>Alias</th>
+                        <th>URI</th>
+                        <th>Template</th>
+                        <th>Published</th>
+                        <th>Deleted</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach((array) ($preview['resources'] ?? []) as $resource)
+                        <tr>
+                            <td>{{ (int) ($resource['id'] ?? 0) }}</td>
+                            <td>{{ (string) ($resource['pagetitle'] ?? '') }}</td>
+                            <td>{{ (string) ($resource['alias'] ?? '') }}</td>
+                            <td>{{ (string) ($resource['uri'] ?? '') }}</td>
+                            <td>#{{ (int) ($resource['template_id'] ?? 0) }} {{ (string) ($resource['template_name'] ?? '') }}</td>
+                            <td>
+                                @if(($resource['published'] ?? null) === null)
+                                    -
+                                @elseif((bool) ($resource['published'] ?? false))
+                                    <span class="label label-success">yes</span>
+                                @else
+                                    <span class="label label-warning">no</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if(($resource['deleted'] ?? null) === null)
+                                    -
+                                @elseif((bool) ($resource['deleted'] ?? false))
+                                    <span class="label label-danger">yes</span>
+                                @else
+                                    <span class="label label-success">no</span>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>

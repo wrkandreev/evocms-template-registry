@@ -73,6 +73,21 @@ class TemplateRegistryApiController
         }
     }
 
+    public function resources(Request $request)
+    {
+        try {
+            $payload = $this->payload();
+            $config = (array) \config('template-registry', []);
+            $resolver = new ResourceContextResolver($config);
+            $limit = (int) $request->query('limit', 100);
+            $limit = max(1, min($limit, 500));
+
+            return \response()->json($resolver->listResources($payload, $limit));
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+    }
+
     public function stats()
     {
         try {

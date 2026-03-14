@@ -21,6 +21,7 @@ Route::prefix($apiPrefix)
         Route::get('/templates', [TemplateRegistryApiController::class, 'templates']);
         Route::get('/templates/{id}', [TemplateRegistryApiController::class, 'templateById'])->where('id', '[0-9]+');
         Route::get('/tvs', [TemplateRegistryApiController::class, 'tvCatalog']);
+        Route::get('/resources', [TemplateRegistryApiController::class, 'resources']);
         Route::get('/stats', [TemplateRegistryApiController::class, 'stats']);
         Route::get('/resource-context', [TemplateRegistryApiController::class, 'resourceContext']);
     });
