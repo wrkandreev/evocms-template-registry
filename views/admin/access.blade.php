@@ -35,7 +35,7 @@
             <div class="btn-group">
                 <button class="btn btn-primary" type="submit" form="token-form">
                     <i class="fa fa-save"></i>
-                    <span>Save token</span>
+                    <span>Save</span>
                 </button>
             </div>
         @endif
@@ -83,10 +83,6 @@
                         <td><code>{{ $apiPrefix }}</code></td>
                     </tr>
                     <tr>
-                        <td><strong>Header</strong></td>
-                        <td><code>X-Template-Registry-Token</code></td>
-                    </tr>
-                    <tr>
                         <td><strong>Token value</strong></td>
                         <td>
                             <input class="form-control token-input" id="access_token" name="access_token" type="text" value="{{ $token }}" autocomplete="off" maxlength="512">
@@ -96,11 +92,17 @@
                     <tr>
                         <td><strong>Plugin status</strong></td>
                         <td>
-                            <select class="form-control field-select" name="plugin_state">
-                                <option value="not_installed" @if(($pluginStatus['exists'] ?? false) !== true) selected @endif>Not installed</option>
-                                <option value="disabled" @if(($pluginStatus['exists'] ?? false) === true && ($pluginStatus['enabled'] ?? false) === false) selected @endif>Disabled</option>
-                                <option value="enabled" @if(($pluginStatus['enabled'] ?? false) === true) selected @endif>Enabled</option>
-                            </select>
+                            @if(($pluginStatus['exists'] ?? false) === true)
+                                <select class="form-control field-select" name="plugin_state">
+                                    <option value="disabled" @if(($pluginStatus['enabled'] ?? false) === false) selected @endif>Disabled</option>
+                                    <option value="enabled" @if(($pluginStatus['enabled'] ?? false) === true) selected @endif>Enabled</option>
+                                </select>
+                            @else
+                                <button class="btn btn-secondary" type="submit" name="plugin_state" value="disabled">
+                                    <i class="fa fa-plug"></i>
+                                    <span>Install plugin</span>
+                                </button>
+                            @endif
                         </td>
                     </tr>
                     <tr>
@@ -108,25 +110,6 @@
                         <td>
                             @if(($pluginStatus['exists'] ?? false) === true)
                                 #{{ (int) ($pluginStatus['id'] ?? 0) }} {{ (string) ($pluginStatus['name'] ?? '') }}
-                            @else
-                                -
-                            @endif
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong>Bound events</strong></td>
-                    <td>
-                        @if(!empty($pluginStatus['events_bound']))
-                            {{ implode(', ', (array) $pluginStatus['events_bound']) }}
-                        @else
-                            -
-                        @endif
-                    </td>
-                    <tr>
-                        <td><strong>Unbound events</strong></td>
-                        <td>
-                            @if(!empty($pluginStatus['events_unbound']))
-                                {{ implode(', ', (array) $pluginStatus['events_unbound']) }}
                             @else
                                 -
                             @endif
