@@ -16,6 +16,7 @@
         .module-tabs { margin-bottom: 1rem; }
         .module-tabs .btn + .btn { margin-left: 0.5rem; }
         .mono { font-family: Menlo, Monaco, Consolas, "Courier New", monospace; font-size: 12px; word-break: break-all; }
+        .field-select { max-width: 260px; }
     </style>
 </head>
 <body>
@@ -25,16 +26,7 @@
     </h1>
 
     <div id="actions">
-        <div class="btn-group">
-            <a class="btn btn-success" href="{{ $toggleUrl }}?enabled=1">
-                <i class="fa fa-toggle-on"></i>
-                <span>Enable API</span>
-            </a>
-            <a class="btn btn-danger" href="{{ $toggleUrl }}?enabled=0">
-                <i class="fa fa-toggle-off"></i>
-                <span>Disable API</span>
-            </a>
-        </div>
+        <div></div>
         @if($activeTab === 'access')
             <div class="btn-group">
                 <button class="btn btn-primary" type="submit" form="token-form">
@@ -69,32 +61,23 @@
     @if($activeTab === 'access')
         <div class="sectionHeader">API Status</div>
         <div class="sectionBody">
-            <table class="table data">
-                <tbody>
-                <tr>
-                    <td><strong>Current status</strong></td>
-                    <td>
-                        @if($enabled)
-                            <span class="label label-success">enabled</span>
-                        @else
-                            <span class="label label-danger">disabled</span>
-                        @endif
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>API base endpoint</strong></td>
-                    <td><code>{{ $apiPrefix }}</code></td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="sectionHeader">Access token</div>
-        <div class="sectionBody">
-            <form id="token-form" method="post" action="{{ $tokenUrl }}">
+            <form id="token-form" method="post" action="{{ $settingsUrl }}">
                 @csrf
                 <table class="table data">
                     <tbody>
+                    <tr>
+                        <td><strong>API status</strong></td>
+                        <td>
+                            <select class="form-control field-select" name="api_enabled">
+                                <option value="enabled" @if($enabled) selected @endif>Enabled</option>
+                                <option value="disabled" @if(!$enabled) selected @endif>Disabled</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>API base endpoint</strong></td>
+                        <td><code>{{ $apiPrefix }}</code></td>
+                    </tr>
                     <tr>
                         <td><strong>Header</strong></td>
                         <td><code>X-Template-Registry-Token</code></td>
@@ -106,40 +89,28 @@
                             <small>Stored in <code>config/template-registry.php</code>.<br>Leave empty to disable token bypass.</small>
                         </td>
                     </tr>
-                    </tbody>
-                </table>
-            </form>
-        </div>
-
-        <div class="sectionBody" style="margin-top:1rem;">
-            API access remains protected by manager session. Token bypass uses header <code>X-Template-Registry-Token</code>.
-        </div>
-
-        <div class="sectionHeader">Auto-generate plugin</div>
-        <div class="sectionBody">
-            <table class="table data">
-                <tbody>
-                <tr>
-                    <td><strong>Plugin status</strong></td>
-                    <td>
-                        @if(($pluginStatus['exists'] ?? false) === true)
-                            @if(($pluginStatus['enabled'] ?? false) === true)
-                                <span class="label label-success">enabled</span>
+                    <tr>
+                        <td><strong>Plugin status</strong></td>
+                        <td>
+                            <select class="form-control field-select" name="plugin_state">
+                                <option value="not_installed" @if(($pluginStatus['exists'] ?? false) !== true) selected @endif>Not installed</option>
+                                <option value="disabled" @if(($pluginStatus['exists'] ?? false) === true && ($pluginStatus['enabled'] ?? false) === false) selected @endif>Disabled</option>
+                                <option value="enabled" @if(($pluginStatus['enabled'] ?? false) === true) selected @endif>Enabled</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Plugin record</strong></td>
+                        <td>
+                            @if(($pluginStatus['exists'] ?? false) === true)
+                                #{{ (int) ($pluginStatus['id'] ?? 0) }} {{ (string) ($pluginStatus['name'] ?? '') }}
                             @else
-                                <span class="label label-warning">disabled</span>
+                                -
                             @endif
-                            <span>#{{ (int) ($pluginStatus['id'] ?? 0) }} {{ (string) ($pluginStatus['name'] ?? '') }}</span>
-                        @else
-                            <span class="label label-danger">not installed</span>
-                        @endif
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Watched events</strong></td>
-                    <td>{{ implode(', ', (array) ($pluginStatus['events_expected'] ?? [])) }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Bound events</strong></td>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Bound events</strong></td>
                     <td>
                         @if(!empty($pluginStatus['events_bound']))
                             {{ implode(', ', (array) $pluginStatus['events_bound']) }}
@@ -147,13 +118,16 @@
                             -
                         @endif
                     </td>
-                </tr>
-                @if(!empty($pluginStatus['events_unbound']))
                     <tr>
                         <td><strong>Unbound events</strong></td>
-                        <td>{{ implode(', ', (array) $pluginStatus['events_unbound']) }}</td>
+                        <td>
+                            @if(!empty($pluginStatus['events_unbound']))
+                                {{ implode(', ', (array) $pluginStatus['events_unbound']) }}
+                            @else
+                                -
+                            @endif
+                        </td>
                     </tr>
-                @endif
                 @if(!empty($pluginStatus['events_missing_in_system']))
                     <tr>
                         <td><strong>Missing in system</strong></td>
@@ -162,35 +136,7 @@
                 @endif
                 </tbody>
             </table>
-
-            <div class="btn-group">
-                @if(($pluginStatus['exists'] ?? false) !== true)
-                    <a class="btn btn-secondary" href="{{ $pluginInstallUrl }}">
-                        <i class="fa fa-plug"></i>
-                        <span>Install plugin (disabled)</span>
-                    </a>
-                @else
-                    @if(($pluginStatus['enabled'] ?? false) === true)
-                        <a class="btn btn-warning" href="{{ $pluginToggleUrl }}?enabled=0">
-                            <i class="fa fa-pause"></i>
-                            <span>Disable plugin</span>
-                        </a>
-                    @else
-                        <a class="btn btn-success" href="{{ $pluginToggleUrl }}?enabled=1">
-                            <i class="fa fa-play"></i>
-                            <span>Enable plugin</span>
-                        </a>
-                    @endif
-                    <a class="btn btn-secondary" href="{{ $pluginInstallUrl }}">
-                        <i class="fa fa-refresh"></i>
-                        <span>Reinstall plugin</span>
-                    </a>
-                @endif
-            </div>
-
-            <div style="margin-top:0.75rem;">
-                Plugin regenerates registry files on <code>OnTVFormSave</code>, <code>OnTVFormDelete</code>, <code>OnTempFormSave</code>, <code>OnTempFormDelete</code>.
-            </div>
+            </form>
         </div>
     @else
         <div class="sectionHeader">Registry preview</div>

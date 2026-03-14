@@ -41,10 +41,7 @@ class TemplateRegistryAccessModuleController
             'enabled' => $enabled,
             'apiPrefix' => '/' . trim((string) ($api['prefix'] ?? 'api/template-registry'), '/'),
             'token' => $token,
-            'toggleUrl' => '/' . $adminPrefix . '/access/toggle',
-            'tokenUrl' => '/' . $adminPrefix . '/access/token',
-            'pluginInstallUrl' => '/' . $adminPrefix . '/access/plugin/install',
-            'pluginToggleUrl' => '/' . $adminPrefix . '/access/plugin/toggle',
+            'settingsUrl' => '/' . $adminPrefix . '/access/settings',
             'accessTabUrl' => $accessUrl . '?tab=access',
             'previewTabUrl' => $accessUrl . '?tab=preview',
             'activeTab' => $activeTab,
@@ -54,68 +51,39 @@ class TemplateRegistryAccessModuleController
         ]);
     }
 
-    public function toggle(Request $request)
+    public function saveSettings(Request $request)
     {
         $store = new ApiAccessStateStore();
-
-        $enabled = (bool) $request->query('enabled', false);
+        $enabled = (string) $request->input('api_enabled', 'enabled') === 'enabled';
         $store->setEnabled($enabled);
 
-        return \redirect('/' . trim((string) \config('template-registry.api.admin_prefix', 'template-registry-admin'), '/') . '/access');
-    }
-
-    public function updateToken(Request $request)
-    {
         $token = trim((string) $request->input('access_token', ''));
         if (strlen($token) > 512) {
             $token = substr($token, 0, 512);
         }
 
         if (!$this->writeAccessTokenToConfig($token)) {
-            return \redirect('/' . trim((string) \config('template-registry.api.admin_prefix', 'template-registry-admin'), '/') . '/access')
+            return $this->accessTabRedirect()
                 ->with('statusError', 'Failed to update config/template-registry.php');
         }
 
-        return \redirect('/' . trim((string) \config('template-registry.api.admin_prefix', 'template-registry-admin'), '/') . '/access')
-            ->with('status', 'Access token updated in config.');
-    }
-
-    public function installPlugin()
-    {
         $manager = new RegistryAutogeneratePluginManager();
-        $result = $manager->install(false);
+        $pluginState = (string) $request->input('plugin_state', 'disabled');
+        $missingEvents = [];
 
-        $created = (bool) ($result['created'] ?? false);
-        $missingEvents = (array) ($result['missing_events'] ?? []);
+        if ($pluginState === 'not_installed') {
+            $manager->uninstall();
+        } else {
+            $result = $manager->install($pluginState === 'enabled');
+            $missingEvents = (array) ($result['missing_events'] ?? []);
+        }
 
-        $status = $created
-            ? 'Auto-generate plugin installed (disabled by default).'
-            : 'Auto-generate plugin updated (disabled by default).';
-
-        $redirect = $this->accessTabRedirect();
-        $redirect = $redirect->with('status', $status);
+        $redirect = $this->accessTabRedirect()->with('status', 'Settings saved.');
         if ($missingEvents !== []) {
             $redirect = $redirect->with('statusWarning', 'Missing system events: ' . implode(', ', $missingEvents));
         }
 
         return $redirect;
-    }
-
-    public function togglePlugin(Request $request)
-    {
-        $manager = new RegistryAutogeneratePluginManager();
-        $plugin = $manager->find();
-        if ($plugin === null) {
-            return $this->accessTabRedirect()->with('statusError', 'Auto-generate plugin is not installed.');
-        }
-
-        $enabled = (bool) $request->query('enabled', false);
-        $manager->setEnabled($plugin, $enabled);
-
-        return $this->accessTabRedirect()->with(
-            'status',
-            $enabled ? 'Auto-generate plugin enabled.' : 'Auto-generate plugin disabled.'
-        );
     }
 
     private function writeAccessTokenToConfig(string $token): bool
