@@ -32,14 +32,16 @@ class ResourceContextResolver
             throw new RuntimeException('Required resource tables not found (site_content/site_tmplvar_contentvalues).');
         }
 
-        $resource = $this->findResource($contentTable, $resourceId, $url);
-        if ($resource === null) {
+        $match = $this->findResourceMatch($contentTable, $resourceId, $url);
+        if ($match === null) {
             return [
                 'message' => 'Resource not found.',
                 'code' => 'resource_not_found',
                 'status' => 404,
             ];
         }
+
+        $resource = $match['resource'];
 
         $templateId = (int) ($resource->template ?? 0);
         $template = $this->findTemplate((array) ($payload['templates'] ?? []), $templateId);
@@ -56,12 +58,49 @@ class ResourceContextResolver
                 'uri' => (string) ($resource->uri ?? ''),
                 'template_id' => $templateId,
             ],
+            'resolved' => [
+                'normalized_url' => $match['normalized_url'],
+                'matched_by' => $match['matched_by'],
+            ],
             'template' => $template,
             'tvs_available' => $availableTvs,
             'tv_values' => $tvValues,
             'stats' => [
                 'available_tvs' => count($availableTvs),
                 'tv_values_found' => count($tvValues),
+            ],
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    public function resolveResourceId(mixed $resourceId, mixed $url): array
+    {
+        $contentTable = $this->resolveTableName((string) $this->cfg('resources_table', 'site_content'));
+        if ($contentTable === null) {
+            throw new RuntimeException('Required resource table not found (site_content).');
+        }
+
+        $match = $this->findResourceMatch($contentTable, $resourceId, $url);
+        if ($match === null) {
+            return [
+                'message' => 'Resource not found.',
+                'code' => 'resource_not_found',
+                'status' => 404,
+            ];
+        }
+
+        $resource = $match['resource'];
+
+        return [
+            'resource_id' => (int) ($resource->id ?? 0),
+            'normalized_url' => $match['normalized_url'],
+            'matched_by' => $match['matched_by'],
+            'resource' => [
+                'id' => (int) ($resource->id ?? 0),
+                'pagetitle' => (string) ($resource->pagetitle ?? ''),
+                'alias' => (string) ($resource->alias ?? ''),
+                'uri' => (string) ($resource->uri ?? ''),
+                'template_id' => (int) ($resource->template ?? 0),
             ],
         ];
     }
@@ -191,7 +230,8 @@ class ResourceContextResolver
         return $result;
     }
 
-    private function findResource(string $contentTable, mixed $resourceId, mixed $url): ?object
+    /** @return array{resource:object,matched_by:string,normalized_url:?string}|null */
+    private function findResourceMatch(string $contentTable, mixed $resourceId, mixed $url): ?array
     {
         $hasUriColumn = Schema::hasColumn($contentTable, 'uri');
         $columns = ['id', 'pagetitle', 'longtitle', 'alias', 'template'];
@@ -202,10 +242,17 @@ class ResourceContextResolver
         if ($resourceId !== null && $resourceId !== '') {
             $id = (int) $resourceId;
             if ($id > 0) {
-                return DB::table($contentTable)
+                $resource = DB::table($contentTable)
                     ->select($columns)
                     ->where('id', $id)
                     ->first();
+                if ($resource !== null) {
+                    return [
+                        'resource' => $resource,
+                        'matched_by' => 'id',
+                        'normalized_url' => null,
+                    ];
+                }
             }
         }
 
@@ -217,32 +264,135 @@ class ResourceContextResolver
         $uriCandidates = $this->buildUriCandidates($normalizedPath);
 
         if ($hasUriColumn) {
-            $query = DB::table($contentTable)
-                ->select($columns)
-                ->where(function ($q) use ($uriCandidates) {
-                    foreach ($uriCandidates as $candidate) {
-                        $q->orWhere('uri', $candidate);
-                    }
-                })
-                ->orderByRaw('LENGTH(uri) DESC')
-                ->orderBy('id');
-
-            $resource = $query->first();
-            if ($resource !== null) {
-                return $resource;
+            foreach ($uriCandidates as $candidate) {
+                $resource = $this->selectResourceByUri($contentTable, $columns, $candidate);
+                if ($resource !== null) {
+                    return [
+                        'resource' => $resource,
+                        'matched_by' => $this->classifyUriMatch($normalizedPath, $candidate),
+                        'normalized_url' => $normalizedPath,
+                    ];
+                }
             }
         }
 
         $singleSegmentAlias = $this->extractSingleSegmentAlias($normalizedPath);
         if ($singleSegmentAlias !== null) {
-            return DB::table($contentTable)
+            $resource = DB::table($contentTable)
                 ->select($columns)
                 ->where('alias', $singleSegmentAlias)
                 ->orderBy('id')
                 ->first();
+            if ($resource !== null) {
+                return [
+                    'resource' => $resource,
+                    'matched_by' => 'alias',
+                    'normalized_url' => $normalizedPath,
+                ];
+            }
+        }
+
+        if ($normalizedPath === '/') {
+            $home = $this->findHomeResource($contentTable, $columns, $hasUriColumn);
+            if ($home !== null) {
+                return [
+                    'resource' => $home,
+                    'matched_by' => 'site_start',
+                    'normalized_url' => $normalizedPath,
+                ];
+            }
         }
 
         return null;
+    }
+
+    /** @param array<int,string> $columns */
+    private function selectResourceByUri(string $contentTable, array $columns, string $candidate): ?object
+    {
+        return DB::table($contentTable)
+            ->select($columns)
+            ->where('uri', $candidate)
+            ->orderByRaw('LENGTH(uri) DESC')
+            ->orderBy('id')
+            ->first();
+    }
+
+    private function classifyUriMatch(string $normalizedPath, string $candidate): string
+    {
+        $normalizedCandidate = '/' . ltrim($candidate, '/');
+        if ($normalizedPath === $normalizedCandidate) {
+            return 'uri';
+        }
+
+        if (str_ends_with($normalizedPath, '.html')) {
+            $withoutHtml = preg_replace('/\.html$/i', '', $normalizedPath) ?: $normalizedPath;
+            if ($withoutHtml === $normalizedCandidate || ($withoutHtml . '/') === $normalizedCandidate) {
+                return 'uri_html';
+            }
+        }
+
+        return 'uri';
+    }
+
+    /** @param array<int,string> $columns */
+    private function findHomeResource(string $contentTable, array $columns, bool $hasUriColumn): ?object
+    {
+        $siteStartId = $this->resolveSiteStartId();
+        if ($siteStartId !== null) {
+            $resource = DB::table($contentTable)
+                ->select($columns)
+                ->where('id', $siteStartId)
+                ->first();
+            if ($resource !== null) {
+                return $resource;
+            }
+        }
+
+        if ($hasUriColumn) {
+            $resource = DB::table($contentTable)
+                ->select($columns)
+                ->whereIn('uri', ['', '/', 'index', 'index.html'])
+                ->orderBy('id')
+                ->first();
+            if ($resource !== null) {
+                return $resource;
+            }
+        }
+
+        $query = DB::table($contentTable)->select($columns);
+        if (Schema::hasColumn($contentTable, 'deleted')) {
+            $query->where('deleted', 0);
+        }
+        if (Schema::hasColumn($contentTable, 'published')) {
+            $query->where('published', 1);
+        }
+        if (Schema::hasColumn($contentTable, 'parent')) {
+            $query->where('parent', 0);
+        }
+        if (Schema::hasColumn($contentTable, 'isfolder')) {
+            $query->where('isfolder', 0);
+        }
+        if (Schema::hasColumn($contentTable, 'menuindex')) {
+            $query->orderBy('menuindex');
+        }
+
+        return $query->orderBy('id')->first();
+    }
+
+    private function resolveSiteStartId(): ?int
+    {
+        if (function_exists('evolutionCMS')) {
+            try {
+                $siteStart = (int) \evolutionCMS()->getConfig('site_start');
+                if ($siteStart > 0) {
+                    return $siteStart;
+                }
+            } catch (\Throwable $e) {
+            }
+        }
+
+        $siteStartFromConfig = (int) \config('site_start', 0);
+        return $siteStartFromConfig > 0 ? $siteStartFromConfig : null;
     }
 
     /** @param array<int,array<string,mixed>> $templates */
@@ -378,13 +528,22 @@ class ResourceContextResolver
         }
 
         $withoutLeadingSlash = ltrim($path, '/');
-        return [
+        $candidates = [
             $withoutLeadingSlash,
             $withoutLeadingSlash . '/',
             $path,
             $path . '/',
-            $withoutLeadingSlash . '.html',
         ];
+
+        if (!str_ends_with(strtolower($withoutLeadingSlash), '.html')) {
+            $candidates[] = $withoutLeadingSlash . '.html';
+        } else {
+            $withoutHtml = preg_replace('/\.html$/i', '', $withoutLeadingSlash) ?: $withoutLeadingSlash;
+            $candidates[] = $withoutHtml;
+            $candidates[] = $withoutHtml . '/';
+        }
+
+        return array_values(array_unique($candidates));
     }
 
     private function extractSingleSegmentAlias(string $path): ?string
@@ -393,6 +552,8 @@ class ResourceContextResolver
         if ($trimmed === '' || str_contains($trimmed, '/')) {
             return null;
         }
+
+        $trimmed = preg_replace('/\.html$/i', '', $trimmed) ?: $trimmed;
 
         return $trimmed;
     }
@@ -403,8 +564,8 @@ class ResourceContextResolver
             return $base;
         }
 
-        $defaultConnection = (string) config('database.default');
-        $prefix = (string) config("database.connections.{$defaultConnection}.prefix", '');
+        $defaultConnection = (string) \config('database.default');
+        $prefix = (string) \config("database.connections.{$defaultConnection}.prefix", '');
         if ($prefix !== '') {
             $withPrefix = $prefix . $base;
             if (Schema::hasTable($withPrefix)) {

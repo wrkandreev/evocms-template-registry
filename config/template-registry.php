@@ -3,7 +3,11 @@
 declare(strict_types=1);
 
 return [
-    'output' => 'core/custom/packages/Main/generated/registry',
+    'output' => '',
+    'output_fallbacks' => [
+        'core/custom/packages/Main/generated/registry',
+        'core/storage/app/template-registry/generated/registry',
+    ],
     'format' => 'all',
     'strict' => false,
 
@@ -36,6 +40,8 @@ return [
     'client_settings' => [
         'config_path' => 'assets/modules/clientsettings/config',
         'selector_controllers_path' => 'assets/tvs/selector/lib',
+        'settings_table' => 'system_settings',
+        'setting_prefixes' => ['client_', 'default_', ''],
     ],
 
     'api' => [

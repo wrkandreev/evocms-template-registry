@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace WrkAndreev\EvocmsTemplateRegistry\Services;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
 class ClientSettingsExtractor
 {
     /** @var array<string,mixed> */
@@ -37,10 +40,12 @@ class ClientSettingsExtractor
                 'tabs_valid' => 0,
                 'tabs_invalid' => 0,
                 'fields_total' => 0,
+                'fields_with_values' => 0,
                 'selector_fields_total' => 0,
                 'selector_controllers_found' => 0,
                 'selector_controllers_missing' => 0,
                 'selector_controllers_dir_exists' => $selectorDirExists,
+                'values_table_exists' => false,
             ],
         ];
 
@@ -80,6 +85,8 @@ class ClientSettingsExtractor
                 $result['fields_catalog'][] = $field;
             }
         }
+
+        $this->enrichWithFieldValues($result);
 
         return $result;
     }
@@ -149,6 +156,10 @@ class ClientSettingsExtractor
     /** @param array<string,mixed> $raw @return array<int|string,mixed> */
     private function extractFieldsCollection(array $raw): array
     {
+        if (isset($raw['settings']) && is_array($raw['settings'])) {
+            return $raw['settings'];
+        }
+
         if (isset($raw['fields']) && is_array($raw['fields'])) {
             return $raw['fields'];
         }
@@ -176,6 +187,8 @@ class ClientSettingsExtractor
             'caption' => (string) ($field['caption'] ?? $field['title'] ?? $field['label'] ?? $name),
             'type' => $type,
             'required' => (bool) ($field['required'] ?? false),
+            'setting_name' => null,
+            'value' => null,
         ];
 
         $stats['fields_total'] = (int) ($stats['fields_total'] ?? 0) + 1;
@@ -192,6 +205,175 @@ class ClientSettingsExtractor
         }
 
         return $item;
+    }
+
+    /** @param array<string,mixed> &$result */
+    private function enrichWithFieldValues(array &$result): void
+    {
+        $fieldNames = [];
+        foreach ((array) ($result['fields_catalog'] ?? []) as $field) {
+            if (!is_array($field)) {
+                continue;
+            }
+
+            $name = trim((string) ($field['name'] ?? ''));
+            if ($name !== '') {
+                $fieldNames[$name] = true;
+            }
+        }
+
+        if ($fieldNames === []) {
+            $result['stats']['values_table_exists'] = $this->hasSystemSettingsTable();
+            return;
+        }
+
+        $valuesByField = $this->loadValuesByFieldNames(array_keys($fieldNames));
+        $result['stats']['values_table_exists'] = (bool) ($valuesByField['_table_exists'] ?? false);
+        unset($valuesByField['_table_exists']);
+
+        foreach ($result['tabs'] as &$tab) {
+            if (!is_array($tab) || !isset($tab['fields']) || !is_array($tab['fields'])) {
+                continue;
+            }
+
+            foreach ($tab['fields'] as &$field) {
+                if (!is_array($field)) {
+                    continue;
+                }
+                $this->applyFieldValue($field, $valuesByField);
+            }
+            unset($field);
+        }
+        unset($tab);
+
+        foreach ($result['fields_catalog'] as &$field) {
+            if (!is_array($field)) {
+                continue;
+            }
+            $this->applyFieldValue($field, $valuesByField);
+        }
+        unset($field);
+
+        $withValues = 0;
+        foreach ((array) ($result['fields_catalog'] ?? []) as $field) {
+            if (!is_array($field)) {
+                continue;
+            }
+            if (!empty($field['setting_name'])) {
+                $withValues++;
+            }
+        }
+        $result['stats']['fields_with_values'] = $withValues;
+    }
+
+    /** @param array<string,mixed> &$field @param array<string,array<string,mixed>> $valuesByField */
+    private function applyFieldValue(array &$field, array $valuesByField): void
+    {
+        $name = trim((string) ($field['name'] ?? ''));
+        if ($name === '' || !isset($valuesByField[$name]) || !is_array($valuesByField[$name])) {
+            return;
+        }
+
+        $match = $valuesByField[$name];
+        $field['setting_name'] = (string) ($match['setting_name'] ?? '');
+        $field['value'] = (string) ($match['value'] ?? '');
+    }
+
+    /** @param array<int,string> $fieldNames @return array<string,mixed> */
+    private function loadValuesByFieldNames(array $fieldNames): array
+    {
+        $table = $this->resolveSystemSettingsTableName();
+        if ($table === null) {
+            return ['_table_exists' => false];
+        }
+
+        $prefixes = (array) $this->cfg('client_settings.setting_prefixes', ['client_', 'default_', '']);
+        $normalizedPrefixes = [];
+        foreach ($prefixes as $prefix) {
+            if (!is_string($prefix)) {
+                continue;
+            }
+            $normalizedPrefixes[] = $prefix;
+        }
+        if ($normalizedPrefixes === []) {
+            $normalizedPrefixes = ['client_', 'default_', ''];
+        }
+
+        $candidateKeys = [];
+        foreach ($fieldNames as $fieldName) {
+            foreach ($normalizedPrefixes as $prefix) {
+                $candidateKeys[] = $prefix . $fieldName;
+            }
+        }
+        $candidateKeys = array_values(array_unique($candidateKeys));
+
+        if ($candidateKeys === []) {
+            return ['_table_exists' => true];
+        }
+
+        try {
+            $rows = DB::table($table)
+                ->select(['setting_name', 'setting_value'])
+                ->whereIn('setting_name', $candidateKeys)
+                ->get();
+        } catch (\Throwable $e) {
+            return ['_table_exists' => true];
+        }
+
+        $bySettingName = [];
+        foreach ($rows as $row) {
+            $key = (string) ($row->setting_name ?? '');
+            if ($key === '') {
+                continue;
+            }
+            $bySettingName[$key] = (string) ($row->setting_value ?? '');
+        }
+
+        $result = ['_table_exists' => true];
+        foreach ($fieldNames as $fieldName) {
+            foreach ($normalizedPrefixes as $prefix) {
+                $settingName = $prefix . $fieldName;
+                if (!array_key_exists($settingName, $bySettingName)) {
+                    continue;
+                }
+
+                $result[$fieldName] = [
+                    'setting_name' => $settingName,
+                    'value' => $bySettingName[$settingName],
+                ];
+                break;
+            }
+        }
+
+        return $result;
+    }
+
+    private function hasSystemSettingsTable(): bool
+    {
+        return $this->resolveSystemSettingsTableName() !== null;
+    }
+
+    private function resolveSystemSettingsTableName(): ?string
+    {
+        $base = (string) $this->cfg('client_settings.settings_table', 'system_settings');
+        if ($base === '') {
+            return null;
+        }
+
+        if (Schema::hasTable($base)) {
+            return $base;
+        }
+
+        $defaultConnection = (string) \config('database.default');
+        $prefix = (string) \config("database.connections.{$defaultConnection}.prefix", '');
+        if ($prefix !== '') {
+            $withPrefix = $prefix . $base;
+            if (Schema::hasTable($withPrefix)) {
+                return $withPrefix;
+            }
+        }
+
+        return null;
     }
 
     /** @param array<string,mixed> $field @param array<string,array<string,mixed>> $selectorMap @return array<string,mixed> */

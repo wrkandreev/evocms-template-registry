@@ -18,6 +18,7 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Run `php core/artisan template-registry:generate`.
 - Check payload contains `client_settings.exists = true`.
 - Check `client_settings.tabs` and `client_settings.fields_catalog` are non-empty.
+- Check `fields_with_values` > 0 when values are saved in ClientSettings.
 
 2. ClientSettings absent
 
@@ -65,6 +66,9 @@ Validate safe behavior of template registry generation and API with optional Cli
 
 7. Resource context endpoint
 
+- Call `GET /api/template-registry/resource-resolve?url=<existing_resource_url_path>`.
+- Verify `resource_id` and `matched_by` are returned.
+- For html-like URL (`/kontakty.html`) verify resolver returns correct resource via `matched_by=uri_html` or `alias`.
 - Call `GET /api/template-registry/resource-context?resource_id=<existing_id>`.
 - Verify response contains `resource`, `template`, `tvs_available`, `tv_values`.
 - Call `GET /api/template-registry/resource-context?url=<existing_resource_url_path>` and compare resolved resource id.

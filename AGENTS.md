@@ -96,7 +96,14 @@ Option:
 
 Default output directory:
 
-- `core/custom/packages/Main/generated/registry`
+- if available: `core/custom/packages/Main/generated/registry`
+- fallback: `core/storage/app/template-registry/generated/registry`
+
+Resolution rules:
+
+- `--output` option has highest priority
+- then `output` from config
+- if both empty, first existing parent path from `output_fallbacks` is used
 
 Generated payload files:
 
@@ -116,6 +123,7 @@ Default prefix: `/api/template-registry`
 - `GET /api/template-registry/tvs`
 - `GET /api/template-registry/resources`
 - `GET /api/template-registry/stats`
+- `GET /api/template-registry/resource-resolve`
 - `GET /api/template-registry/resource-context`
 
 Optional single-template filter:
@@ -124,13 +132,18 @@ Optional single-template filter:
 
 Resource context for local AI/tools:
 
+- `GET /api/template-registry/resource-resolve?url=/path/to/resource`
+- `GET /api/template-registry/resource-resolve?resource_id=123`
 - `GET /api/template-registry/resource-context?url=/path/to/resource`
 - `GET /api/template-registry/resource-context?resource_id=123`
 
 `resources` returns created resources with template meta and key system fields useful for admin/tooling context.
 
+`resource-resolve` returns stable `resource_id` by URL/id with `matched_by` diagnostics.
+Use this endpoint first when you only have URL and need reliable resource id.
+
 `resource-context` returns resource meta, matched template, available TVs and current TV values.
-Use this endpoint when agent needs exact context for one page/resource.
+Use this endpoint after `resource-resolve` when agent needs exact context for one page/resource.
 
 If registry cannot be built (for example required tables are missing), API returns controlled JSON error:
 
@@ -175,6 +188,8 @@ Rules:
 
 - Always return `client_settings` in payload.
 - If config directory is absent: `client_settings.exists=false`, empty `tabs` and `fields_catalog`.
+- Read fields from ClientSettings tab config (`settings` key is primary).
+- Enrich fields with current values from `system_settings` using configured prefixes.
 - Invalid/broken tab configs must not break generation/API.
 - Selector controller enrichment is best-effort. Missing file/controller is non-fatal.
 

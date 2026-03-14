@@ -97,6 +97,25 @@ class TemplateRegistryApiController
         }
     }
 
+    public function resourceResolve(Request $request)
+    {
+        try {
+            $config = (array) \config('template-registry', []);
+            $resolver = new ResourceContextResolver($config);
+            $result = $resolver->resolveResourceId(
+                $request->query('resource_id'),
+                $request->query('url')
+            );
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+
+        $status = (int) ($result['status'] ?? 200);
+        unset($result['status']);
+
+        return \response()->json($result, $status);
+    }
+
     public function resourceContext(Request $request)
     {
         try {

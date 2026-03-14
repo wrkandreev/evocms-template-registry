@@ -79,6 +79,13 @@ php core/artisan template-registry:generate
 - `--format=json|md|php|all`
 - `--strict` завершить с ошибкой при обнаружении отсутствующего controller/view
 
+Если `--output` и `output` в конфиге не заданы, команда выбирает первый доступный путь из `output_fallbacks`:
+
+- `core/custom/packages/Main/generated/registry`
+- `core/storage/app/template-registry/generated/registry`
+
+Это позволяет работать даже когда пакет `Main` еще не создан.
+
 Для плагина автогенерации доступны опции:
 
 - `template-registry:plugin:install --enabled` (установить сразу включенным)
@@ -117,14 +124,29 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - `GET /api/template-registry/tvs` только каталог TV
 - `GET /api/template-registry/resources` список ресурсов с template meta и основными системными полями
 - `GET /api/template-registry/stats` только статистика
+- `GET /api/template-registry/resource-resolve` быстрый резолв `resource_id` по URL или id
 - `GET /api/template-registry/resource-context` контекст ресурс/шаблон/TV по URL или id
 
 Опциональные фильтры:
 
 - `GET /api/template-registry?template_id=12` один шаблон через query
 - `GET /api/template-registry/resources?limit=100`
+- `GET /api/template-registry/resource-resolve?url=/kontakty.html`
+- `GET /api/template-registry/resource-resolve?resource_id=123`
 - `GET /api/template-registry/resource-context?url=/catalog/iphone-15`
 - `GET /api/template-registry/resource-context?resource_id=123`
+
+`resource-resolve` возвращает:
+
+- `resource_id`
+- `normalized_url`
+- `matched_by` (`id|uri|uri_html|alias|site_start`)
+- минимальную информацию о ресурсе (`id`, `pagetitle`, `alias`, `uri`, `template_id`)
+
+Рекомендуемый поток для инструментов/AI:
+
+1. Сначала `resource-resolve` по URL.
+2. Потом `resource-context` по найденному `resource_id`.
 
 `resource-context` возвращает:
 
@@ -180,10 +202,12 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
       "tabs_valid": 0,
       "tabs_invalid": 0,
       "fields_total": 0,
+      "fields_with_values": 0,
       "selector_fields_total": 0,
       "selector_controllers_found": 0,
       "selector_controllers_missing": 0,
-      "selector_controllers_dir_exists": false
+      "selector_controllers_dir_exists": false,
+      "values_table_exists": false
     }
   },
   "stats": {
@@ -203,6 +227,7 @@ ClientSettings не является обязательным.
 
 - Если `assets/modules/clientsettings/config` не существует: payload остается валидным и `client_settings.exists=false`.
 - Tab-конфиги загружаются безопасно; невалидные/битые файлы увеличивают `client_settings.stats.tabs_invalid` и не ломают API/команду.
+- Пакет поддерживает структуру ClientSettings с ключом `settings` и подхватывает текущие значения из `system_settings`.
 - Для selector-полей (`customtv:selector`) пакет пытается обогатить метаданные контроллера из `assets/tvs/selector/lib/*.controller.class.php`.
 - Отсутствующие файлы selector-контроллеров не являются фатальной ошибкой (`controller_exists=false`).
 
@@ -223,10 +248,11 @@ ClientSettings не является обязательным.
 Основные настройки:
 
 - параметры вывода (`output`, `format`, `strict`)
+- fallback-пути вывода (`output_fallbacks`)
 - имена таблиц (`site_templates`, `site_tmplvar_templates`, `site_tmplvars`)
 - fallback-конвенции для controller и view
 - маппинг namespace/path для поиска файлов controller
-- опциональные пути ClientSettings (`client_settings.config_path`, `client_settings.selector_controllers_path`)
+- опциональные пути/источники ClientSettings (`client_settings.config_path`, `client_settings.selector_controllers_path`, `client_settings.settings_table`, `client_settings.setting_prefixes`)
 - таблицы для lookup ресурсов (`resources_table`, `tv_values_table`)
 - настройки API (`api.enabled`, `api.prefix`, `api.middleware`, `api.require_manager`, `api.access_token`, `api.admin_prefix`)
 

@@ -23,6 +23,7 @@ Route::prefix($apiPrefix)
         Route::get('/tvs', [TemplateRegistryApiController::class, 'tvCatalog']);
         Route::get('/resources', [TemplateRegistryApiController::class, 'resources']);
         Route::get('/stats', [TemplateRegistryApiController::class, 'stats']);
+        Route::get('/resource-resolve', [TemplateRegistryApiController::class, 'resourceResolve']);
         Route::get('/resource-context', [TemplateRegistryApiController::class, 'resourceContext']);
     });
 

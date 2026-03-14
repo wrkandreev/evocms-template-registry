@@ -31,10 +31,7 @@ class GenerateTemplateRegistryCommand extends Command
             return self::INVALID;
         }
 
-        $output = trim((string) ($this->option('output') ?: ($config['output'] ?? '')));
-        if ($output === '') {
-            $output = 'core/custom/packages/Main/generated/registry';
-        }
+        $output = $this->resolveOutputPath($config);
 
         $strict = (bool) $this->option('strict') || (bool) ($config['strict'] ?? false);
 
@@ -58,5 +55,52 @@ class GenerateTemplateRegistryCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /** @param array<string,mixed> $config */
+    private function resolveOutputPath(array $config): string
+    {
+        $outputFromOption = trim((string) $this->option('output'));
+        if ($outputFromOption !== '') {
+            return $outputFromOption;
+        }
+
+        $outputFromConfig = trim((string) ($config['output'] ?? ''));
+        if ($outputFromConfig !== '') {
+            return $outputFromConfig;
+        }
+
+        $fallbacks = (array) ($config['output_fallbacks'] ?? []);
+        if ($fallbacks === []) {
+            $fallbacks = [
+                'core/custom/packages/Main/generated/registry',
+                'core/storage/app/template-registry/generated/registry',
+            ];
+        }
+
+        foreach ($fallbacks as $candidate) {
+            if (!is_string($candidate) || trim($candidate) === '') {
+                continue;
+            }
+
+            $candidatePath = trim($candidate);
+            $parentPath = $this->toAbsolutePath(dirname($candidatePath));
+            if (is_dir($parentPath)) {
+                return $candidatePath;
+            }
+        }
+
+        return (string) reset($fallbacks);
+    }
+
+    private function toAbsolutePath(string $path): string
+    {
+        if ($path === '' || str_starts_with($path, '/')) {
+            return $path;
+        }
+
+        $basePath = function_exists('base_path') ? (string) base_path() : getcwd();
+        $projectRoot = dirname($basePath);
+        return rtrim($projectRoot, '/') . '/' . ltrim($path, '/');
     }
 }
