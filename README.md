@@ -237,10 +237,6 @@ ClientSettings не является обязательным.
 - CLI-команда возвращает код ошибки и читаемое сообщение.
 - API возвращает `503` с `{"code":"registry_unavailable"}` и текстом ошибки.
 
-## Тест-план
-
-План ручной регрессии: `docs/test-plan.md`
-
 ## Конфигурация
 
 Файл конфига: `core/custom/config/template-registry.php`.
@@ -258,4 +254,5 @@ ClientSettings не является обязательным.
 
 ## Совместимость
 
-Пакет ориентирован на Evolution CMS 3 CE.
+Пакет ориентирован на Evolution CMS 3 CE v 3.1.30
+php 8.3
