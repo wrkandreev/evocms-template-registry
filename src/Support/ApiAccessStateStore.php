@@ -16,40 +16,10 @@ class ApiAccessStateStore
         return $default;
     }
 
-    public function getAccessToken(string $default): string
-    {
-        $state = $this->readState();
-        if (array_key_exists('access_token', $state)) {
-            return trim((string) $state['access_token']);
-        }
-
-        return trim($default);
-    }
-
-    public function hasTokenOverride(): bool
-    {
-        $state = $this->readState();
-        return array_key_exists('access_token', $state);
-    }
-
     public function setEnabled(bool $enabled): void
     {
         $state = $this->readState();
         $state['enabled'] = $enabled;
-        $this->writeState($state);
-    }
-
-    public function setAccessToken(string $token): void
-    {
-        $state = $this->readState();
-        $state['access_token'] = trim($token);
-        $this->writeState($state);
-    }
-
-    public function clearAccessTokenOverride(): void
-    {
-        $state = $this->readState();
-        unset($state['access_token']);
         $this->writeState($state);
     }
 

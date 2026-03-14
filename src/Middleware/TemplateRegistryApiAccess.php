@@ -23,8 +23,7 @@ class TemplateRegistryApiAccess
             ], 403);
         }
 
-        $configuredToken = trim((string) ($api['access_token'] ?? ''));
-        $accessToken = $stateStore->getAccessToken($configuredToken);
+        $accessToken = trim((string) ($api['access_token'] ?? ''));
         if ($accessToken !== '') {
             $requestToken = trim((string) $request->header('X-Template-Registry-Token', ''));
             if ($requestToken !== '' && hash_equals($accessToken, $requestToken)) {

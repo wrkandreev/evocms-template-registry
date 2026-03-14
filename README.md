@@ -82,7 +82,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - требуется manager-сессия (`api.require_manager = true`)
 - API можно глобально включать/выключать через модуль в менеджере
 - опционально можно использовать токен для локальных инструментов (заголовок `X-Template-Registry-Token`)
-- токен можно редактировать на странице модуля (runtime-override без правки конфига)
+- токен можно редактировать на странице модуля (значение записывается в `config/template-registry.php`)
 
 Эндпоинты по умолчанию:
 
@@ -114,8 +114,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 
 На этой странице можно включать/выключать доступ к API и менять access token без ручного редактирования конфига.
 Путь можно изменить через `api.admin_prefix`.
-Runtime-токен из модуля имеет приоритет над `api.access_token` из конфига.
-На странице также доступен сброс runtime-токена обратно к значению из конфига.
+Если токен уже задан в `config/template-registry.php`, модуль покажет текущее значение.
 
 Чтобы зарегистрировать эту страницу как пункт модуля (меню Modules), выполните:
 

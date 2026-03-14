@@ -130,11 +130,11 @@ Access is protected by middleware:
 
 ### Runtime state file
 
-Manager page writes runtime state here (enabled flag and optional token override):
+Manager page writes runtime state here (enabled flag):
 
 - `core/storage/app/template-registry-api-state.json`
 
-If file does not exist, defaults come from config (`api.enabled`, `api.access_token`).
+If file does not exist, default comes from config (`api.enabled`).
 
 ## Optional ClientSettings integration
 
@@ -183,8 +183,7 @@ Manager route:
 
 - `GET /template-registry-admin/access`
 
-Use this page to switch API on/off and edit runtime token without editing config.
-Manager page also allows resetting runtime token override back to config value.
+Use this page to switch API on/off and edit token value in `config/template-registry.php`.
 
 ## Important conventions for agents
 
@@ -193,3 +192,5 @@ Manager page also allows resetting runtime token override back to config value.
 - Prefer additive changes in config and routes
 - Preserve payload structure used by `TemplateRegistryGenerator`
 - If you change API contract, update both `README.md` and `AGENTS.md`
+- Keep manager module UI aligned with common Evolution CMS style (same visual approach as Commerce module templates).
+- When showing updates on a remote site: first commit and push package changes to GitHub, then update package on server via Composer over SSH (do not patch files directly in `vendor`).
