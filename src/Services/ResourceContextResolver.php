@@ -68,11 +68,17 @@ class ResourceContextResolver
 
     private function findResource(string $contentTable, mixed $resourceId, mixed $url): ?object
     {
+        $hasUriColumn = Schema::hasColumn($contentTable, 'uri');
+        $columns = ['id', 'pagetitle', 'longtitle', 'alias', 'template'];
+        if ($hasUriColumn) {
+            $columns[] = 'uri';
+        }
+
         if ($resourceId !== null && $resourceId !== '') {
             $id = (int) $resourceId;
             if ($id > 0) {
                 return DB::table($contentTable)
-                    ->select(['id', 'pagetitle', 'longtitle', 'alias', 'uri', 'template'])
+                    ->select($columns)
                     ->where('id', $id)
                     ->first();
             }
@@ -85,25 +91,27 @@ class ResourceContextResolver
 
         $uriCandidates = $this->buildUriCandidates($normalizedPath);
 
-        $query = DB::table($contentTable)
-            ->select(['id', 'pagetitle', 'longtitle', 'alias', 'uri', 'template'])
-            ->where(function ($q) use ($uriCandidates) {
-                foreach ($uriCandidates as $candidate) {
-                    $q->orWhere('uri', $candidate);
-                }
-            })
-            ->orderByRaw('LENGTH(uri) DESC')
-            ->orderBy('id');
+        if ($hasUriColumn) {
+            $query = DB::table($contentTable)
+                ->select($columns)
+                ->where(function ($q) use ($uriCandidates) {
+                    foreach ($uriCandidates as $candidate) {
+                        $q->orWhere('uri', $candidate);
+                    }
+                })
+                ->orderByRaw('LENGTH(uri) DESC')
+                ->orderBy('id');
 
-        $resource = $query->first();
-        if ($resource !== null) {
-            return $resource;
+            $resource = $query->first();
+            if ($resource !== null) {
+                return $resource;
+            }
         }
 
         $singleSegmentAlias = $this->extractSingleSegmentAlias($normalizedPath);
         if ($singleSegmentAlias !== null) {
             return DB::table($contentTable)
-                ->select(['id', 'pagetitle', 'longtitle', 'alias', 'uri', 'template'])
+                ->select($columns)
                 ->where('alias', $singleSegmentAlias)
                 ->orderBy('id')
                 ->first();
