@@ -20,6 +20,8 @@
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.75rem; }
         .stat-card { border: 1px solid #dcdcdc; background: #fff; padding: 0.75rem 1rem; }
         .stat-card .value { font-size: 22px; font-weight: 700; line-height: 1.1; }
+        .stat-card .value.is-yes { color: #2f7d32; }
+        .stat-card .value.is-no { color: #a94442; }
         .stat-card .label { margin-top: 0.25rem; color: #666; }
     </style>
 </head>
@@ -150,6 +152,24 @@
                     </div>
                 </div>
                 @php($features = (array) ($preview['system_features'] ?? []))
+                <div class="stats-grid" style="margin-bottom:1rem;">
+                    <div class="stat-card">
+                        <div class="value @if(!empty($features['client_settings']['installed'])) is-yes @else is-no @endif">@if(!empty($features['client_settings']['installed'])) yes @else no @endif</div>
+                        <div class="label">ClientSettings</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value @if(!empty($features['multitv']['installed'])) is-yes @else is-no @endif">@if(!empty($features['multitv']['installed'])) yes @else no @endif</div>
+                        <div class="label">MultiTV</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value @if(!empty($features['custom_tv_select']['installed'])) is-yes @else is-no @endif">@if(!empty($features['custom_tv_select']['installed'])) yes @else no @endif</div>
+                        <div class="label">Custom TV Select</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value @if(!empty($features['templatesedit']['installed'])) is-yes @else is-no @endif">@if(!empty($features['templatesedit']['installed'])) yes @else no @endif</div>
+                        <div class="label">TemplatesEdit</div>
+                    </div>
+                </div>
                 <table class="table data">
                     <tbody>
                     <tr>
@@ -162,17 +182,6 @@
                             templates: {{ (int) ($preview['templates_total'] ?? 0) }},
                             tvs: {{ (int) ($preview['tv_total'] ?? 0) }},
                             resources shown: {{ (int) ($preview['resources_total'] ?? 0) }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong>System features</strong></td>
-                        <td>
-                            ClientSettings: @if(!empty($features['client_settings']['installed'])) yes @else no @endif,<br>
-                            MultiTV: @if(!empty($features['multitv']['installed'])) yes @else no @endif,
-                            configs: {{ (int) (($features['multitv']['details']['configs_count'] ?? 0)) }}<br>
-                            Custom TV Select: @if(!empty($features['custom_tv_select']['installed'])) yes @else no @endif,
-                            controllers: {{ (int) (($features['custom_tv_select']['details']['controllers_count'] ?? 0)) }}<br>
-                            TemplatesEdit: @if(!empty($features['templatesedit']['installed'])) yes @else no @endif
                         </td>
                     </tr>
                     </tbody>
