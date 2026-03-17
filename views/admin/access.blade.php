@@ -149,6 +149,7 @@
                         <div class="label">ClientSettings</div>
                     </div>
                 </div>
+                @php($features = (array) ($preview['system_features'] ?? []))
                 <table class="table data">
                     <tbody>
                     <tr>
@@ -161,6 +162,17 @@
                             templates: {{ (int) ($preview['templates_total'] ?? 0) }},
                             tvs: {{ (int) ($preview['tv_total'] ?? 0) }},
                             resources shown: {{ (int) ($preview['resources_total'] ?? 0) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>System features</strong></td>
+                        <td>
+                            ClientSettings: @if(!empty($features['client_settings']['installed'])) yes @else no @endif,<br>
+                            MultiTV: @if(!empty($features['multitv']['installed'])) yes @else no @endif,
+                            configs: {{ (int) (($features['multitv']['details']['configs_count'] ?? 0)) }}<br>
+                            Custom TV Select: @if(!empty($features['custom_tv_select']['installed'])) yes @else no @endif,
+                            controllers: {{ (int) (($features['custom_tv_select']['details']['controllers_count'] ?? 0)) }}<br>
+                            TemplatesEdit: @if(!empty($features['templatesedit']['installed'])) yes @else no @endif
                         </td>
                     </tr>
                     </tbody>

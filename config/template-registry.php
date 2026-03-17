@@ -40,8 +40,27 @@ return [
     'client_settings' => [
         'config_path' => 'assets/modules/clientsettings/config',
         'selector_controllers_path' => 'assets/tvs/selector/lib',
+        'class_file' => 'assets/modules/clientsettings/core/src/ClientSettings.php',
         'settings_table' => 'system_settings',
         'setting_prefixes' => ['client_', 'default_', ''],
+    ],
+
+    'multitv' => [
+        'customtv_file' => 'assets/tvs/multitv/multitv.customtv.php',
+        'module_file' => 'assets/tvs/multitv/multitv.module.php',
+        'configs_path' => 'assets/tvs/multitv/configs',
+    ],
+
+    'custom_tv_select' => [
+        'customtv_file' => 'assets/tvs/selector/selector.customtv.php',
+        'lib_path' => 'assets/tvs/selector/lib',
+    ],
+
+    'templatesedit' => [
+        'plugin_path' => 'assets/plugins/templatesedit',
+        'plugin_file' => 'assets/plugins/templatesedit/plugin.templatesedit.php',
+        'class_file' => 'assets/plugins/templatesedit/class/templatesedit.class.php',
+        'configs_path' => 'assets/plugins/templatesedit/configs',
     ],
 
     'api' => [

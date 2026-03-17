@@ -129,6 +129,7 @@ class TemplateRegistryGenerator
         $stats['unique_tvs'] = count($tvCatalog);
 
         $clientSettings = (new ClientSettingsExtractor($this->config, $this->projectRootPath()))->extract();
+        $systemFeatures = (new SystemFeaturesDetector($this->config, $this->projectRootPath()))->detect();
 
         return [
             'generated_at' => date(DATE_ATOM),
@@ -136,6 +137,7 @@ class TemplateRegistryGenerator
             'templates' => $rows,
             'tv_catalog' => $tvCatalog,
             'client_settings' => $clientSettings,
+            'system_features' => $systemFeatures,
             'stats' => $stats,
         ];
     }
@@ -458,6 +460,7 @@ class TemplateRegistryGenerator
         $templates = (array) ($payload['templates'] ?? []);
         $clientSettings = (array) ($payload['client_settings'] ?? []);
         $clientSettingsStats = (array) ($clientSettings['stats'] ?? []);
+        $systemFeatures = (array) ($payload['system_features'] ?? []);
 
         $lines = [];
         $lines[] = '# Templates Registry';
@@ -472,6 +475,9 @@ class TemplateRegistryGenerator
         $lines[] = '- unique_tvs: ' . ($stats['unique_tvs'] ?? 0);
         $lines[] = '- client_settings_exists: ' . (!empty($clientSettings['exists']) ? 'true' : 'false');
         $lines[] = '- client_settings_tabs_total: ' . ($clientSettingsStats['tabs_total'] ?? 0);
+        $lines[] = '- multitv_installed: ' . ($this->featureInstalled($systemFeatures, 'multitv') ? 'true' : 'false');
+        $lines[] = '- custom_tv_select_installed: ' . ($this->featureInstalled($systemFeatures, 'custom_tv_select') ? 'true' : 'false');
+        $lines[] = '- templatesedit_installed: ' . ($this->featureInstalled($systemFeatures, 'templatesedit') ? 'true' : 'false');
         $lines[] = '';
         $lines[] = '| template id | alias | controller | view | tv count | flags |';
         $lines[] = '|---:|---|---|---|---:|---|';
@@ -551,6 +557,13 @@ class TemplateRegistryGenerator
     private function escapeMd(string $text): string
     {
         return str_replace('|', '\\|', $text);
+    }
+
+    /** @param array<string,mixed> $systemFeatures */
+    private function featureInstalled(array $systemFeatures, string $key): bool
+    {
+        $feature = $systemFeatures[$key] ?? null;
+        return is_array($feature) && !empty($feature['installed']);
     }
 
     /** @return array<int,string> */

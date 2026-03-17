@@ -181,6 +181,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - `templates[]` с `controller`, `view`, `tv_refs`, `flags`
 - `tv_catalog[]` для дедуплицированного каталога TV
 - `client_settings` присутствует всегда (объект; данные модуля опциональны)
+- `system_features` показывает наличие связанных модулей/расширений
 - `stats` сводная статистика (`missing_*`, `unique_tvs` и т.д.)
 
 ### JSON-контракт (schema-like)
@@ -193,6 +194,41 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
   "project": "example.local",
   "templates": [],
   "tv_catalog": [],
+  "system_features": {
+    "client_settings": {
+      "installed": false,
+      "details": {
+        "config_dir_exists": false,
+        "core_class_exists": false
+      }
+    },
+    "multitv": {
+      "installed": false,
+      "details": {
+        "customtv_file_exists": false,
+        "module_file_exists": false,
+        "configs_dir_exists": false,
+        "configs_count": 0
+      }
+    },
+    "custom_tv_select": {
+      "installed": false,
+      "details": {
+        "customtv_file_exists": false,
+        "lib_dir_exists": false,
+        "controllers_count": 0
+      }
+    },
+    "templatesedit": {
+      "installed": false,
+      "details": {
+        "plugin_dir_exists": false,
+        "plugin_file_exists": false,
+        "class_file_exists": false,
+        "configs_dir_exists": false
+      }
+    }
+  },
   "client_settings": {
     "exists": false,
     "tabs": [],
@@ -231,6 +267,17 @@ ClientSettings не является обязательным.
 - Для selector-полей (`customtv:selector`) пакет пытается обогатить метаданные контроллера из `assets/tvs/selector/lib/*.controller.class.php`.
 - Отсутствующие файлы selector-контроллеров не являются фатальной ошибкой (`controller_exists=false`).
 
+### Детект интеграций проекта
+
+Пакет также определяет наличие связанных частей системы и возвращает это в `system_features`:
+
+- `client_settings`
+- `multitv`
+- `custom_tv_select`
+- `templatesedit`
+
+Детект строится по файловым сигнатурам проекта и нужен, чтобы AI/инструменты точно понимали, какие расширения реально установлены.
+
 ### Поведение при ошибках API/команды
 
 - Отсутствие обязательных таблиц TV/template возвращает контролируемую ошибку (без фатала).
@@ -249,6 +296,7 @@ ClientSettings не является обязательным.
 - fallback-конвенции для controller и view
 - маппинг namespace/path для поиска файлов controller
 - опциональные пути/источники ClientSettings (`client_settings.config_path`, `client_settings.selector_controllers_path`, `client_settings.settings_table`, `client_settings.setting_prefixes`)
+- сигнатуры related extensions (`multitv.*`, `custom_tv_select.*`, `templatesedit.*`)
 - таблицы для lookup ресурсов (`resources_table`, `tv_values_table`)
 - настройки API (`api.enabled`, `api.prefix`, `api.middleware`, `api.require_manager`, `api.access_token`, `api.admin_prefix`)
 

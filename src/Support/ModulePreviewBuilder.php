@@ -32,6 +32,7 @@ class ModulePreviewBuilder
                 'generated_at' => (string) ($payload['generated_at'] ?? ''),
                 'stats' => (array) ($payload['stats'] ?? []),
                 'client_settings' => $this->buildClientSettingsPreview((array) ($payload['client_settings'] ?? [])),
+                'system_features' => $this->buildSystemFeaturesPreview((array) ($payload['system_features'] ?? [])),
                 'templates' => array_slice($this->mapTemplates((array) ($payload['templates'] ?? [])), 0, 100),
                 'tv_catalog' => array_slice($this->mapTvCatalog((array) ($payload['tv_catalog'] ?? [])), 0, 200),
                 'resources' => $resources,
@@ -193,5 +194,26 @@ class ModulePreviewBuilder
             'tabs_truncated' => count($tabs) > 50,
             'fields_truncated' => count($fields) > 200,
         ];
+    }
+
+    /** @param array<string,mixed> $systemFeatures @return array<string,mixed> */
+    private function buildSystemFeaturesPreview(array $systemFeatures): array
+    {
+        $keys = ['client_settings', 'multitv', 'custom_tv_select', 'templatesedit'];
+        $items = [];
+
+        foreach ($keys as $key) {
+            $feature = $systemFeatures[$key] ?? null;
+            $details = is_array($feature) && is_array($feature['details'] ?? null)
+                ? $feature['details']
+                : [];
+
+            $items[$key] = [
+                'installed' => is_array($feature) && !empty($feature['installed']),
+                'details' => $details,
+            ];
+        }
+
+        return $items;
     }
 }

@@ -14,6 +14,7 @@ It provides:
 - manager page to enable/disable API access quickly
 - optional manager plugin for auto-regeneration on TV/template changes
 - optional ClientSettings extraction (safe, non-required)
+- detection of installed related extensions (`ClientSettings`, `multiTV`, `custom tv select`, `templatesedit`)
 
 ## Compatibility
 
@@ -203,6 +204,7 @@ Registry payload must include:
 
 - `generated_at`, `project`, `templates`, `tv_catalog`, `stats`
 - `client_settings` object (always present)
+- `system_features` object with installation status for related extensions
 
 `client_settings` shape:
 
@@ -210,6 +212,14 @@ Registry payload must include:
 - `tabs` (array)
 - `fields_catalog` (array)
 - `stats` with tabs/fields/selector counters
+
+`system_features` shape:
+
+- `client_settings.installed`
+- `multitv.installed`
+- `custom_tv_select.installed`
+- `templatesedit.installed`
+- each item may include `details` with filesystem diagnostics
 
 ## Testing
 

@@ -74,6 +74,16 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Call `GET /api/template-registry/resource-context?url=<existing_resource_url_path>` and compare resolved resource id.
 - Call endpoint with unknown url/id and verify `404` with `code = resource_not_found`.
 
+8. Related system features detection
+
+- Verify payload always contains `system_features` object.
+- On project with related extensions installed, verify correct `installed=true` flags for:
+  - `client_settings`
+  - `multitv`
+  - `custom_tv_select`
+  - `templatesedit`
+- Verify `details` diagnostics match filesystem reality (configs dirs, controller count, plugin/class files).
+
 8. Resources endpoint
 
 - Call `GET /api/template-registry/resources`.
