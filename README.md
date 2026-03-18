@@ -182,6 +182,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - `tv_catalog[]` для дедуплицированного каталога TV
 - `client_settings` присутствует всегда (объект; данные модуля опциональны)
 - `system_features` показывает наличие связанных модулей/расширений
+- отдельный API endpoint доступен для удаленного чтения PageBuilder-конфигов
 - `stats` сводная статистика (`missing_*`, `unique_tvs` и т.д.)
 
 ### JSON-контракт (schema-like)
@@ -226,6 +227,16 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
         "plugin_file_exists": false,
         "class_file_exists": false,
         "configs_dir_exists": false
+      }
+    },
+    "pagebuilder": {
+      "installed": false,
+      "details": {
+        "plugin_dir_exists": false,
+        "main_file_exists": false,
+        "config_dir_exists": false,
+        "customtv_file_exists": false,
+        "configs_count": 0
       }
     }
   },
@@ -275,6 +286,7 @@ ClientSettings не является обязательным.
 - `multitv`
 - `custom_tv_select`
 - `templatesedit`
+- `pagebuilder`
 
 Детект строится по файловым сигнатурам проекта и нужен, чтобы AI/инструменты точно понимали, какие расширения реально установлены.
 
@@ -297,8 +309,30 @@ ClientSettings не является обязательным.
 - маппинг namespace/path для поиска файлов controller
 - опциональные пути/источники ClientSettings (`client_settings.config_path`, `client_settings.selector_controllers_path`, `client_settings.settings_table`, `client_settings.setting_prefixes`)
 - сигнатуры related extensions (`multitv.*`, `custom_tv_select.*`, `templatesedit.*`)
+- сигнатуры и пути PageBuilder (`pagebuilder.*`)
 - таблицы для lookup ресурсов (`resources_table`, `tv_values_table`)
 - настройки API (`api.enabled`, `api.prefix`, `api.middleware`, `api.require_manager`, `api.access_token`, `api.admin_prefix`)
+
+## API endpoints
+
+- `GET /api/template-registry`
+- `GET /api/template-registry/templates`
+- `GET /api/template-registry/templates/{id}`
+- `GET /api/template-registry/tvs`
+- `GET /api/template-registry/resources`
+- `GET /api/template-registry/stats`
+- `GET /api/template-registry/resource-resolve`
+- `GET /api/template-registry/resource-context`
+- `GET /api/template-registry/pagebuilder-configs`
+- `GET /api/template-registry/pagebuilder-configs/{name}`
+
+### PageBuilder configs API
+
+Если на проекте установлен PageBuilder, можно отдельно читать его конфиги через API.
+
+- `GET /api/template-registry/pagebuilder-configs` возвращает список файлов конфигурации, их тип (`block|container|groups`), валидность и полный распарсенный массив `config`.
+- `GET /api/template-registry/pagebuilder-configs/{name}` возвращает один конфиг по имени файла без `.php` / `.php.sample`.
+- Если директория `assets/plugins/pagebuilder/config` отсутствует, API возвращает валидный ответ с `exists=false` и пустым списком.
 
 ## Совместимость
 

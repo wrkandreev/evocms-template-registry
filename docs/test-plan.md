@@ -82,15 +82,29 @@ Validate safe behavior of template registry generation and API with optional Cli
   - `multitv`
   - `custom_tv_select`
   - `templatesedit`
+  - `pagebuilder`
 - Verify `details` diagnostics match filesystem reality (configs dirs, controller count, plugin/class files).
 
-8. Resources endpoint
+9. Resources endpoint
 
 - Call `GET /api/template-registry/resources`.
 - Verify response is a list of created resources with `id`, `pagetitle`, `alias`, `template_id`, `template_name` and system fields like `menuindex`, `introtext`, `published`, `deleted`.
 - Call `GET /api/template-registry/resources?limit=1` and verify limit is applied.
 
-9. Auto-regenerate plugin
+10. PageBuilder configs API
+
+- Ensure `assets/plugins/pagebuilder/config` contains one or more valid config files.
+- Call `GET /api/template-registry/pagebuilder-configs`.
+- Verify response contains:
+  - `exists = true`
+  - non-empty `configs[]`
+  - `kind` values like `block`, `container` or `groups`
+  - parsed `config` arrays from files
+- Call `GET /api/template-registry/pagebuilder-configs/<existing_name>` and verify one exact config is returned.
+- Call endpoint with unknown name and verify `404`.
+- Temporarily remove/rename config dir and verify list endpoint returns `exists = false` with empty `configs`.
+
+11. Auto-regenerate plugin
 
 - Run `php core/artisan template-registry:plugin:install` and verify plugin is created as disabled.
 - Enable plugin (from module page or `template-registry:plugin:install --enabled`).

@@ -130,6 +130,8 @@ Default prefix: `/api/template-registry`
 - `GET /api/template-registry/stats`
 - `GET /api/template-registry/resource-resolve`
 - `GET /api/template-registry/resource-context`
+- `GET /api/template-registry/pagebuilder-configs`
+- `GET /api/template-registry/pagebuilder-configs/{name}`
 
 Optional single-template filter:
 
@@ -149,6 +151,9 @@ Use this endpoint first when you only have URL and need reliable resource id.
 
 `resource-context` returns resource meta, matched template, available TVs and current TV values.
 Use this endpoint after `resource-resolve` when agent needs exact context for one page/resource.
+
+`pagebuilder-configs` returns parsed PageBuilder config files from `assets/plugins/pagebuilder/config` for remote tooling.
+Use `pagebuilder-configs/{name}` when you need one exact block/container/groups config by file name.
 
 If registry cannot be built (for example required tables are missing), API returns controlled JSON error:
 
@@ -219,6 +224,7 @@ Registry payload must include:
 - `multitv.installed`
 - `custom_tv_select.installed`
 - `templatesedit.installed`
+- `pagebuilder.installed`
 - each item may include `details` with filesystem diagnostics
 
 ## Testing

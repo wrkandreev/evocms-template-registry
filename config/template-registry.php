@@ -63,6 +63,13 @@ return [
         'configs_path' => 'assets/plugins/templatesedit/configs',
     ],
 
+    'pagebuilder' => [
+        'plugin_path' => 'assets/plugins/pagebuilder',
+        'main_file' => 'assets/plugins/pagebuilder/pagebuilder.php',
+        'config_path' => 'assets/plugins/pagebuilder/config',
+        'customtv_file' => 'assets/tvs/pagebuilder/pagebuilder.customtv.php',
+    ],
+
     'api' => [
         'enabled' => true,
         'prefix' => 'api/template-registry',

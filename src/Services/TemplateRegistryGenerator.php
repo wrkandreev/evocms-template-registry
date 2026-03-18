@@ -478,6 +478,7 @@ class TemplateRegistryGenerator
         $lines[] = '- multitv_installed: ' . ($this->featureInstalled($systemFeatures, 'multitv') ? 'true' : 'false');
         $lines[] = '- custom_tv_select_installed: ' . ($this->featureInstalled($systemFeatures, 'custom_tv_select') ? 'true' : 'false');
         $lines[] = '- templatesedit_installed: ' . ($this->featureInstalled($systemFeatures, 'templatesedit') ? 'true' : 'false');
+        $lines[] = '- pagebuilder_installed: ' . ($this->featureInstalled($systemFeatures, 'pagebuilder') ? 'true' : 'false');
         $lines[] = '';
         $lines[] = '| template id | alias | controller | view | tv count | flags |';
         $lines[] = '|---:|---|---|---|---:|---|';

@@ -147,8 +147,8 @@
                         <div class="label">Resources shown</div>
                     </div>
                     <div class="stat-card">
-                        <div class="value">@if((bool) (($preview['client_settings']['exists'] ?? false))) yes @else no @endif</div>
-                        <div class="label">ClientSettings</div>
+                        <div class="value">{{ (int) (($preview['client_settings']['stats']['fields_total'] ?? 0)) }}</div>
+                        <div class="label">ClientSettings fields</div>
                     </div>
                 </div>
                 @php($features = (array) ($preview['system_features'] ?? []))
@@ -168,6 +168,10 @@
                     <div class="stat-card">
                         <div class="value @if(!empty($features['templatesedit']['installed'])) is-yes @else is-no @endif">@if(!empty($features['templatesedit']['installed'])) yes @else no @endif</div>
                         <div class="label">TemplatesEdit</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value @if(!empty($features['pagebuilder']['installed'])) is-yes @else is-no @endif">@if(!empty($features['pagebuilder']['installed'])) yes @else no @endif</div>
+                        <div class="label">PageBuilder</div>
                     </div>
                 </div>
                 <table class="table data">

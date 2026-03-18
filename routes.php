@@ -25,6 +25,8 @@ Route::prefix($apiPrefix)
         Route::get('/stats', [TemplateRegistryApiController::class, 'stats']);
         Route::get('/resource-resolve', [TemplateRegistryApiController::class, 'resourceResolve']);
         Route::get('/resource-context', [TemplateRegistryApiController::class, 'resourceContext']);
+        Route::get('/pagebuilder-configs', [TemplateRegistryApiController::class, 'pageBuilderConfigs']);
+        Route::get('/pagebuilder-configs/{name}', [TemplateRegistryApiController::class, 'pageBuilderConfigByName']);
     });
 
 $adminPrefix = trim((string) ($apiConfig['admin_prefix'] ?? 'template-registry-admin'), '/');

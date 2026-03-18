@@ -26,6 +26,7 @@ class SystemFeaturesDetector
             'multitv' => $this->detectMultiTv(),
             'custom_tv_select' => $this->detectCustomTvSelect(),
             'templatesedit' => $this->detectTemplatesEdit(),
+            'pagebuilder' => $this->detectPageBuilder(),
         ];
     }
 
@@ -118,6 +119,39 @@ class SystemFeaturesDetector
                 'plugin_file_exists' => $pluginFileExists,
                 'class_file_exists' => $classFileExists,
                 'configs_dir_exists' => $configsDirExists,
+            ],
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    private function detectPageBuilder(): array
+    {
+        $pluginDir = $this->absolutePath((string) $this->cfg('pagebuilder.plugin_path', 'assets/plugins/pagebuilder'));
+        $mainFile = $this->absolutePath((string) $this->cfg('pagebuilder.main_file', 'assets/plugins/pagebuilder/pagebuilder.php'));
+        $configDir = $this->absolutePath((string) $this->cfg('pagebuilder.config_path', 'assets/plugins/pagebuilder/config'));
+        $customTvFile = $this->absolutePath((string) $this->cfg('pagebuilder.customtv_file', 'assets/tvs/pagebuilder/pagebuilder.customtv.php'));
+
+        $configCount = 0;
+        if (is_dir($configDir)) {
+            $configCount = count(array_merge(
+                glob($configDir . '/*.php') ?: [],
+                glob($configDir . '/*.php.sample') ?: []
+            ));
+        }
+
+        $pluginDirExists = is_dir($pluginDir);
+        $mainFileExists = is_file($mainFile);
+        $configDirExists = is_dir($configDir);
+        $customTvFileExists = is_file($customTvFile);
+
+        return [
+            'installed' => $pluginDirExists || $mainFileExists || $configDirExists || $customTvFileExists,
+            'details' => [
+                'plugin_dir_exists' => $pluginDirExists,
+                'main_file_exists' => $mainFileExists,
+                'config_dir_exists' => $configDirExists,
+                'customtv_file_exists' => $customTvFileExists,
+                'configs_count' => $configCount,
             ],
         ];
     }

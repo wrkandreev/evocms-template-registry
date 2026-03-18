@@ -6,6 +6,7 @@ namespace WrkAndreev\EvocmsTemplateRegistry\Http\Controllers;
 
 use Illuminate\Http\Request;
 use RuntimeException;
+use WrkAndreev\EvocmsTemplateRegistry\Services\PageBuilderConfigExtractor;
 use WrkAndreev\EvocmsTemplateRegistry\Services\ResourceContextResolver;
 use WrkAndreev\EvocmsTemplateRegistry\Services\TemplateRegistryGenerator;
 
@@ -137,12 +138,48 @@ class TemplateRegistryApiController
         return \response()->json($context, $status);
     }
 
+    public function pageBuilderConfigs()
+    {
+        try {
+            $config = (array) \config('template-registry', []);
+            $extractor = new PageBuilderConfigExtractor($config, $this->projectRoot());
+            return \response()->json($extractor->extract());
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+    }
+
+    public function pageBuilderConfigByName(string $name)
+    {
+        try {
+            $config = (array) \config('template-registry', []);
+            $extractor = new PageBuilderConfigExtractor($config, $this->projectRoot());
+            $item = $extractor->findByName($name);
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+
+        if ($item === null) {
+            return \response()->json([
+                'message' => 'PageBuilder config not found.',
+            ], 404);
+        }
+
+        return \response()->json($item);
+    }
+
     /** @return array<string,mixed> */
     private function payload(): array
     {
         $config = (array) \config('template-registry', []);
         $generator = new TemplateRegistryGenerator($config);
         return $generator->buildPayload();
+    }
+
+    private function projectRoot(): string
+    {
+        $basePath = function_exists('base_path') ? base_path() : getcwd();
+        return dirname((string) $basePath);
     }
 
     private function errorResponse(string $message)
