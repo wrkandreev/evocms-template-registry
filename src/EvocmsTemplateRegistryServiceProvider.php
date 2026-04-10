@@ -49,12 +49,18 @@ class EvocmsTemplateRegistryServiceProvider extends ServiceProvider
 
     public function boot()
     {
+        $routesPath = dirname(__DIR__) . '/routes.php';
         if (method_exists($this, 'loadRoutesFrom')) {
-            $this->loadRoutesFrom(dirname(__DIR__) . '/routes.php');
+            $this->loadRoutesFrom($routesPath);
+        } elseif (is_file($routesPath)) {
+            require $routesPath;
         }
 
+        $viewsPath = dirname(__DIR__) . '/views';
         if (method_exists($this, 'loadViewsFrom')) {
-            $this->loadViewsFrom(dirname(__DIR__) . '/views', 'template-registry');
+            $this->loadViewsFrom($viewsPath, 'template-registry');
+        } elseif (isset($this->app['view']) && method_exists($this->app['view'], 'addNamespace')) {
+            $this->app['view']->addNamespace('template-registry', $viewsPath);
         }
     }
 
