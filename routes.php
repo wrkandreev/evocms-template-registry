@@ -10,10 +10,31 @@ use WrkAndreev\EvocmsTemplateRegistry\Middleware\TemplateRegistryManagerAccess;
 
 $apiConfig = (array) config('template-registry.api', []);
 $apiPrefix = trim((string) ($apiConfig['prefix'] ?? 'api/template-registry'), '/');
-$apiMiddleware = $apiConfig['middleware'] ?? ['web'];
+$apiMiddleware = $apiConfig['middleware'] ?? ['global'];
 if (!is_array($apiMiddleware)) {
     $apiMiddleware = [$apiMiddleware];
 }
+
+$registeredMiddleware = (array) config('app.middleware', []);
+$registeredAliases = (array) ($registeredMiddleware['aliases'] ?? []);
+$registeredGroups = array_merge(
+    array_keys((array) ($registeredMiddleware['global'] ?? [])) === range(0, count((array) ($registeredMiddleware['global'] ?? [])) - 1) ? ['global'] : [],
+    array_keys((array) ($registeredMiddleware['mgr'] ?? [])) === range(0, count((array) ($registeredMiddleware['mgr'] ?? [])) - 1) ? ['mgr'] : [],
+    array_keys((array) $registeredAliases)
+);
+
+$apiMiddleware = array_values(array_filter(array_map(static function ($middleware) use ($registeredGroups) {
+    if (!is_string($middleware) || trim($middleware) === '') {
+        return null;
+    }
+
+    if ($middleware === 'web' && !in_array('web', $registeredGroups, true) && in_array('global', $registeredGroups, true)) {
+        return 'global';
+    }
+
+    return $middleware;
+}, $apiMiddleware)));
+
 $apiMiddleware[] = TemplateRegistryApiAccess::class;
 
 Route::prefix($apiPrefix)
@@ -47,9 +68,10 @@ Route::prefix($apiPrefix)
     });
 
 $adminPrefix = trim((string) ($apiConfig['admin_prefix'] ?? 'template-registry-admin'), '/');
+$adminMiddleware = in_array('mgr', $registeredGroups, true) ? ['mgr'] : ['global'];
 
 Route::prefix($adminPrefix)
-    ->middleware(['web', TemplateRegistryManagerAccess::class])
+    ->middleware(array_merge($adminMiddleware, [TemplateRegistryManagerAccess::class]))
     ->group(function (): void {
         Route::get('/access', [TemplateRegistryAccessModuleController::class, 'index']);
         Route::post('/access/settings', [TemplateRegistryAccessModuleController::class, 'saveSettings']);

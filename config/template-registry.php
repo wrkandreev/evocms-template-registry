@@ -73,7 +73,7 @@ return [
     'api' => [
         'enabled' => true,
         'prefix' => 'api/template-registry',
-        'middleware' => ['web'],
+        'middleware' => ['global'],
         'require_manager' => true,
         'access_token' => '',
         'write_enabled' => false,
