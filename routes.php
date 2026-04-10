@@ -15,6 +15,9 @@ if (!is_array($apiMiddleware)) {
     $apiMiddleware = [$apiMiddleware];
 }
 
+$globalMiddleware = (array) config('app.middleware.global', []);
+$mgrMiddleware = (array) config('app.middleware.mgr', []);
+
 $apiMiddleware = array_values(array_filter(array_map(static function ($middleware) {
     if (!is_string($middleware) || trim($middleware) === '') {
         return null;
@@ -27,7 +30,22 @@ $apiMiddleware = array_values(array_filter(array_map(static function ($middlewar
     return $middleware;
 }, $apiMiddleware)));
 
-$apiMiddleware[] = TemplateRegistryApiAccess::class;
+$expandedApiMiddleware = [];
+foreach ($apiMiddleware as $middleware) {
+    if ($middleware === 'global') {
+        $expandedApiMiddleware = array_merge($expandedApiMiddleware, $globalMiddleware);
+        continue;
+    }
+
+    if ($middleware === 'mgr') {
+        $expandedApiMiddleware = array_merge($expandedApiMiddleware, $mgrMiddleware);
+        continue;
+    }
+
+    $expandedApiMiddleware[] = $middleware;
+}
+
+$apiMiddleware = array_values(array_unique(array_merge($expandedApiMiddleware, [TemplateRegistryApiAccess::class])));
 
 Route::prefix($apiPrefix)
     ->middleware($apiMiddleware)
@@ -62,7 +80,7 @@ Route::prefix($apiPrefix)
 $adminPrefix = trim((string) ($apiConfig['admin_prefix'] ?? 'template-registry-admin'), '/');
 
 Route::prefix($adminPrefix)
-    ->middleware(['mgr', TemplateRegistryManagerAccess::class])
+    ->middleware(array_values(array_unique(array_merge($mgrMiddleware, [TemplateRegistryManagerAccess::class]))))
     ->group(function (): void {
         Route::get('/access', [TemplateRegistryAccessModuleController::class, 'index']);
         Route::post('/access/settings', [TemplateRegistryAccessModuleController::class, 'saveSettings']);
