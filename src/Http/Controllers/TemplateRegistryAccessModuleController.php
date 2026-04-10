@@ -19,6 +19,8 @@ class TemplateRegistryAccessModuleController
         $settingsManager = new ModuleSettingsManager();
         $enabled = $settingsManager->isApiEnabled($api);
         $token = $settingsManager->readToken($api);
+        $writeEnabled = $settingsManager->isWriteEnabled($api);
+        $writeToken = $settingsManager->readWriteToken($api);
         $adminPrefix = trim((string) ($api['admin_prefix'] ?? 'template-registry-admin'), '/');
         $activeTab = (string) $request->query('tab', 'access');
         if (!in_array($activeTab, ['access', 'preview'], true)) {
@@ -42,6 +44,8 @@ class TemplateRegistryAccessModuleController
             'enabled' => $enabled,
             'apiPrefix' => '/' . trim((string) ($api['prefix'] ?? 'api/template-registry'), '/'),
             'token' => $token,
+            'writeEnabled' => $writeEnabled,
+            'writeToken' => $writeToken,
             'settingsUrl' => '/' . $adminPrefix . '/access/settings',
             'accessTabUrl' => $accessUrl . '?tab=access',
             'previewTabUrl' => $accessUrl . '?tab=preview',
@@ -57,6 +61,8 @@ class TemplateRegistryAccessModuleController
         $result = (new ModuleSettingsManager())->save(
             (string) $request->input('api_enabled', 'enabled'),
             (string) $request->input('access_token', ''),
+            (string) $request->input('write_enabled', 'disabled'),
+            (string) $request->input('write_access_token', ''),
             (string) $request->input('plugin_state', 'disabled')
         );
 

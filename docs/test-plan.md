@@ -104,7 +104,27 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Call endpoint with unknown name and verify `404`.
 - Temporarily remove/rename config dir and verify list endpoint returns `exists = false` with empty `configs`.
 
-11. Auto-regenerate plugin
+11. Write API access control
+
+- Open module page and enable `Write API status`.
+- Set `write_access_token` and save settings.
+- Call a write endpoint without manager session and without token: verify `403`.
+- Call the same endpoint with invalid `X-Template-Registry-Write-Token`: verify `403`.
+- Call with valid `X-Template-Registry-Write-Token`: verify request is allowed.
+- Disable write API and verify all write endpoints return `403`.
+
+12. Write API operations
+
+- Call `POST /api/template-registry/templates` and verify a new row appears in `site_templates`.
+- Call `POST /api/template-registry/tvs` and verify a new row appears in `site_tmplvars`.
+- Call `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}` and verify row appears in `site_tmplvar_templates`.
+- Call `POST /api/template-registry/resources` with `template_id` and verify a new row appears in `site_content`.
+- Call `PUT /api/template-registry/resources/{resourceId}/template` and verify `template` changes in `site_content`.
+- Call `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}` and verify row appears or updates in `site_tmplvar_contentvalues`.
+- Call `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}` and verify link row is removed.
+- With `api.regenerate_after_write=true`, verify generated registry files are refreshed after successful writes.
+
+13. Auto-regenerate plugin
 
 - Run `php core/artisan template-registry:plugin:install` and verify plugin is created as disabled.
 - Enable plugin (from module page or `template-registry:plugin:install --enabled`).

@@ -132,6 +132,13 @@ Default prefix: `/api/template-registry`
 - `GET /api/template-registry/resource-context`
 - `GET /api/template-registry/pagebuilder-configs`
 - `GET /api/template-registry/pagebuilder-configs/{name}`
+- `POST /api/template-registry/templates`
+- `POST /api/template-registry/tvs`
+- `POST /api/template-registry/resources`
+- `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}`
+- `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
+- `PUT /api/template-registry/resources/{resourceId}/template`
+- `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}`
 
 Optional single-template filter:
 
@@ -167,6 +174,7 @@ Access is protected by middleware:
 1. Global enabled/disabled state (toggle in manager module)
 2. Optional token bypass for local tools
 3. Manager session check (default)
+4. Write operations require separate write flag/token or manager session
 
 ### Config keys (`core/custom/config/template-registry.php`)
 
@@ -175,6 +183,9 @@ Access is protected by middleware:
 - `api.middleware` route middleware list
 - `api.require_manager` require manager auth (`true` by default)
 - `api.access_token` optional token for local tools (header: `X-Template-Registry-Token`)
+- `api.write_enabled` enable write API (`false` by default)
+- `api.write_access_token` optional write token (header: `X-Template-Registry-Write-Token`)
+- `api.regenerate_after_write` rewrite generated registry files after successful write operation
 - `api.admin_prefix` module page prefix (default `template-registry-admin`)
 
 ### Runtime state file
@@ -246,6 +257,7 @@ Manager route:
 - `GET /template-registry-admin/access`
 
 Use this page to switch API on/off, edit token value in `custom/config/template-registry.php`, and manage auto-regenerate plugin state.
+The same page also exposes write API enable/token settings.
 
 ## Important conventions for agents
 

@@ -76,6 +76,9 @@ return [
         'middleware' => ['web'],
         'require_manager' => true,
         'access_token' => '',
+        'write_enabled' => false,
+        'write_access_token' => '',
+        'regenerate_after_write' => true,
         'admin_prefix' => 'template-registry-admin',
     ],
 ];

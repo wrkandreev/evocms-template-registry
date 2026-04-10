@@ -92,6 +92,23 @@
                         </td>
                     </tr>
                     <tr>
+                        <td><strong>Write API status</strong></td>
+                        <td>
+                            <select class="form-control field-select" name="write_enabled">
+                                <option value="disabled" @if(!$writeEnabled) selected @endif>Disabled</option>
+                                <option value="enabled" @if($writeEnabled) selected @endif>Enabled</option>
+                            </select>
+                            <small>Disabled by default. Enables create/update endpoints for templates, TVs and resources.</small>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Write token value</strong></td>
+                        <td>
+                            <input class="form-control token-input" id="write_access_token" name="write_access_token" type="text" value="{{ $writeToken }}" autocomplete="off" maxlength="512">
+                            <small>Header: <code>X-Template-Registry-Write-Token</code>.<br>Leave empty to allow writes only from active manager session.</small>
+                        </td>
+                    </tr>
+                    <tr>
                         <td><strong>Plugin status</strong></td>
                         <td>
                             @if(($pluginStatus['exists'] ?? false) === true)

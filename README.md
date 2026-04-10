@@ -126,6 +126,15 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - `GET /api/template-registry/stats` только статистика
 - `GET /api/template-registry/resource-resolve` быстрый резолв `resource_id` по URL или id
 - `GET /api/template-registry/resource-context` контекст ресурс/шаблон/TV по URL или id
+- `GET /api/template-registry/pagebuilder-configs` список PageBuilder-конфигов
+- `GET /api/template-registry/pagebuilder-configs/{name}` один PageBuilder-конфиг по имени
+- `POST /api/template-registry/templates` создать шаблон
+- `POST /api/template-registry/tvs` создать TV
+- `POST /api/template-registry/resources` создать ресурс
+- `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}` привязать TV к шаблону
+- `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}` отвязать TV от шаблона
+- `PUT /api/template-registry/resources/{resourceId}/template` сменить шаблон ресурса
+- `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}` сохранить значение TV для ресурса
 
 Опциональные фильтры:
 
@@ -163,6 +172,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 
 На этой странице можно включать/выключать доступ к API, менять access token без ручного редактирования конфига и смотреть preview сгенерированных сущностей (templates/TV/resources/ClientSettings).
 Там же отображается состояние плагина автогенерации и кнопки его установки/включения/выключения.
+Для write API там же доступны отдельные настройки: `write_enabled` и `write_access_token`.
 Путь можно изменить через `api.admin_prefix`.
 Если токен уже задан в `custom/config/template-registry.php`, модуль покажет текущее значение.
 
@@ -312,6 +322,7 @@ ClientSettings не является обязательным.
 - сигнатуры и пути PageBuilder (`pagebuilder.*`)
 - таблицы для lookup ресурсов (`resources_table`, `tv_values_table`)
 - настройки API (`api.enabled`, `api.prefix`, `api.middleware`, `api.require_manager`, `api.access_token`, `api.admin_prefix`)
+- настройки write API (`api.write_enabled`, `api.write_access_token`, `api.regenerate_after_write`)
 
 ## API endpoints
 
@@ -325,6 +336,13 @@ ClientSettings не является обязательным.
 - `GET /api/template-registry/resource-context`
 - `GET /api/template-registry/pagebuilder-configs`
 - `GET /api/template-registry/pagebuilder-configs/{name}`
+- `POST /api/template-registry/templates`
+- `POST /api/template-registry/tvs`
+- `POST /api/template-registry/resources`
+- `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}`
+- `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
+- `PUT /api/template-registry/resources/{resourceId}/template`
+- `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}`
 
 ### PageBuilder configs API
 
@@ -333,6 +351,48 @@ ClientSettings не является обязательным.
 - `GET /api/template-registry/pagebuilder-configs` возвращает список файлов конфигурации, их тип (`block|container|groups`), валидность и полный распарсенный массив `config`.
 - `GET /api/template-registry/pagebuilder-configs/{name}` возвращает один конфиг по имени файла без `.php` / `.php.sample`.
 - Если директория `assets/plugins/pagebuilder/config` отсутствует, API возвращает валидный ответ с `exists=false` и пустым списком.
+
+### Write API
+
+Write API выключен по умолчанию.
+
+- Для включения выставьте `api.write_enabled=true`.
+- Для token-доступа передавайте заголовок `X-Template-Registry-Write-Token`.
+- Если `write_access_token` пустой, запись разрешена только из активной manager session.
+- После успешной write-операции пакет по умолчанию регенерирует registry files (`api.regenerate_after_write=true`).
+
+Примеры payload:
+
+```json
+{
+  "name": "Landing Page",
+  "alias": "landing-page",
+  "controller": "EvolutionCMS\\Main\\Controllers\\LandingPageController",
+  "view": "landing-page"
+}
+```
+
+```json
+{
+  "name": "hero_title",
+  "caption": "Hero title",
+  "type": "text",
+  "default_text": ""
+}
+```
+
+```json
+{
+  "pagetitle": "About us",
+  "alias": "about",
+  "template_id": 12,
+  "parent": 0,
+  "published": true,
+  "tv_values": {
+    "15": "Hero title from API"
+  }
+}
+```
 
 ## Совместимость
 
