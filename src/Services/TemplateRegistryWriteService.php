@@ -144,7 +144,11 @@ class TemplateRegistryWriteService
         $pivotTable = $this->requireTable('template_tv_pivot_table', 'site_tmplvar_templates');
         $this->assertExists($table, $templateId, 'Template');
 
-        $resourceCount = DB::table($contentTable)->where('template', $templateId)->count();
+        $resourceQuery = DB::table($contentTable)->where('template', $templateId);
+        if (Schema::hasColumn($contentTable, 'deleted')) {
+            $resourceQuery->where('deleted', 0);
+        }
+        $resourceCount = $resourceQuery->count();
         if ($resourceCount > 0) {
             throw new RuntimeException('Template is used by existing resources.');
         }
