@@ -88,7 +88,7 @@ class TemplateRegistryWriteApiController
     {
         $message = strtolower($message);
 
-        foreach (['required', 'invalid', 'must', 'already exists', 'empty'] as $needle) {
+        foreach (['required', 'invalid', 'must', 'already exists', 'empty', 'not attached'] as $needle) {
             if (str_contains($message, $needle)) {
                 return 422;
             }
