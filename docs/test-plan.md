@@ -117,9 +117,16 @@ Validate safe behavior of template registry generation and API with optional Cli
 12. Write API operations
 
 - Call `POST /api/template-registry/templates` and verify a new row appears in `site_templates`.
+- Call `PATCH /api/template-registry/templates/{templateId}` and verify template fields change in `site_templates`.
+- Call `DELETE /api/template-registry/templates/{templateId}` for an unused template and verify it is removed.
+- Call `DELETE /api/template-registry/templates/{templateId}` for a template used by resources and verify API returns `422`.
 - Call `POST /api/template-registry/tvs` and verify a new row appears in `site_tmplvars`.
+- Call `PATCH /api/template-registry/tvs/{tvId}` and verify TV fields change in `site_tmplvars`.
+- Call `DELETE /api/template-registry/tvs/{tvId}` and verify TV row, template links and content values are removed.
 - Call `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}` and verify row appears in `site_tmplvar_templates`.
 - Call `POST /api/template-registry/resources` with `template_id` and verify a new row appears in `site_content`.
+- Call `PATCH /api/template-registry/resources/{resourceId}` and verify selected resource fields change in `site_content`.
+- Call `DELETE /api/template-registry/resources/{resourceId}` and verify `deleted=1` and `published=0` in `site_content`.
 - Call `PUT /api/template-registry/resources/{resourceId}/template` and verify `template` changes in `site_content`.
 - Call `PUT /api/template-registry/resources/{resourceId}/published` and verify `published`/`publishedon` change in `site_content`.
 - Call `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}` and verify row appears or updates in `site_tmplvar_contentvalues`.

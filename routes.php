@@ -69,8 +69,14 @@ Route::prefix($apiPrefix)
     ->middleware($writeMiddleware)
     ->group(function (): void {
         Route::post('/templates', [TemplateRegistryWriteApiController::class, 'createTemplate']);
+        Route::patch('/templates/{templateId}', [TemplateRegistryWriteApiController::class, 'updateTemplate'])->where('templateId', '[0-9]+');
+        Route::delete('/templates/{templateId}', [TemplateRegistryWriteApiController::class, 'deleteTemplate'])->where('templateId', '[0-9]+');
         Route::post('/tvs', [TemplateRegistryWriteApiController::class, 'createTv']);
+        Route::patch('/tvs/{tvId}', [TemplateRegistryWriteApiController::class, 'updateTv'])->where('tvId', '[0-9]+');
+        Route::delete('/tvs/{tvId}', [TemplateRegistryWriteApiController::class, 'deleteTv'])->where('tvId', '[0-9]+');
         Route::post('/resources', [TemplateRegistryWriteApiController::class, 'createResource']);
+        Route::patch('/resources/{resourceId}', [TemplateRegistryWriteApiController::class, 'updateResource'])->where('resourceId', '[0-9]+');
+        Route::delete('/resources/{resourceId}', [TemplateRegistryWriteApiController::class, 'deleteResource'])->where('resourceId', '[0-9]+');
         Route::put('/templates/{templateId}/tvs/{tvId}', [TemplateRegistryWriteApiController::class, 'attachTvToTemplate'])->where(['templateId' => '[0-9]+', 'tvId' => '[0-9]+']);
         Route::delete('/templates/{templateId}/tvs/{tvId}', [TemplateRegistryWriteApiController::class, 'detachTvFromTemplate'])->where(['templateId' => '[0-9]+', 'tvId' => '[0-9]+']);
         Route::put('/resources/{resourceId}/template', [TemplateRegistryWriteApiController::class, 'setResourceTemplate'])->where('resourceId', '[0-9]+');

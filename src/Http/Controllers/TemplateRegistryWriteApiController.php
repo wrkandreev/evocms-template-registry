@@ -66,6 +66,48 @@ class TemplateRegistryWriteApiController
         });
     }
 
+    public function updateTemplate(int $templateId, Request $request)
+    {
+        return $this->handle(function (TemplateRegistryWriteService $service) use ($templateId, $request) {
+            return $service->updateTemplate($templateId, (array) $request->all());
+        });
+    }
+
+    public function deleteTemplate(int $templateId)
+    {
+        return $this->handle(function (TemplateRegistryWriteService $service) use ($templateId) {
+            return $service->deleteTemplate($templateId);
+        });
+    }
+
+    public function updateTv(int $tvId, Request $request)
+    {
+        return $this->handle(function (TemplateRegistryWriteService $service) use ($tvId, $request) {
+            return $service->updateTv($tvId, (array) $request->all());
+        });
+    }
+
+    public function deleteTv(int $tvId)
+    {
+        return $this->handle(function (TemplateRegistryWriteService $service) use ($tvId) {
+            return $service->deleteTv($tvId);
+        });
+    }
+
+    public function updateResource(int $resourceId, Request $request)
+    {
+        return $this->handle(function (TemplateRegistryWriteService $service) use ($resourceId, $request) {
+            return $service->updateResource($resourceId, (array) $request->all());
+        });
+    }
+
+    public function deleteResource(int $resourceId)
+    {
+        return $this->handle(function (TemplateRegistryWriteService $service) use ($resourceId) {
+            return $service->deleteResource($resourceId);
+        });
+    }
+
     private function handle(callable $callback, int $successStatus = 200)
     {
         try {
@@ -88,7 +130,7 @@ class TemplateRegistryWriteApiController
     {
         $message = strtolower($message);
 
-        foreach (['required', 'invalid', 'must', 'already exists', 'empty', 'not attached'] as $needle) {
+        foreach (['required', 'invalid', 'must', 'already exists', 'empty', 'not attached', 'used by', 'no '] as $needle) {
             if (str_contains($message, $needle)) {
                 return 422;
             }

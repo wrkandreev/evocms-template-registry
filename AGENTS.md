@@ -145,8 +145,14 @@ Default prefix: `/api/template-registry`
 - `GET /api/template-registry/pagebuilder-configs`
 - `GET /api/template-registry/pagebuilder-configs/{name}`
 - `POST /api/template-registry/templates`
+- `PATCH /api/template-registry/templates/{templateId}`
+- `DELETE /api/template-registry/templates/{templateId}`
 - `POST /api/template-registry/tvs`
+- `PATCH /api/template-registry/tvs/{tvId}`
+- `DELETE /api/template-registry/tvs/{tvId}`
 - `POST /api/template-registry/resources`
+- `PATCH /api/template-registry/resources/{resourceId}`
+- `DELETE /api/template-registry/resources/{resourceId}`
 - `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `PUT /api/template-registry/resources/{resourceId}/template`

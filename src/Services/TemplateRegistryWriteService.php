@@ -71,6 +71,100 @@ class TemplateRegistryWriteService
     }
 
     /** @param array<string,mixed> $input @return array<string,mixed> */
+    public function updateTemplate(int $templateId, array $input): array
+    {
+        $table = $this->requireTable('templates_table', 'site_templates');
+        $columns = $this->columnMap($table);
+        $this->assertExists($table, $templateId, 'Template');
+
+        $payload = [];
+
+        if (array_key_exists('name', $input) || array_key_exists('templatename', $input)) {
+            $name = trim((string) ($input['name'] ?? $input['templatename'] ?? ''));
+            if ($name === '') {
+                throw new RuntimeException('Required field "name" is empty.');
+            }
+            if (isset($columns['templatename']) && $this->valueExistsExceptId($table, 'templatename', $name, $templateId)) {
+                throw new RuntimeException('Template name already exists.');
+            }
+            $this->assignIfColumn($payload, $columns, 'templatename', $name);
+        }
+
+        if (array_key_exists('alias', $input) || array_key_exists('templatealias', $input)) {
+            $alias = trim((string) ($input['alias'] ?? $input['templatealias'] ?? ''));
+            if ($alias === '') {
+                throw new RuntimeException('Required field "alias" is empty.');
+            }
+            if (isset($columns['templatealias']) && $this->valueExistsExceptId($table, 'templatealias', $alias, $templateId)) {
+                throw new RuntimeException('Template alias already exists.');
+            }
+            $this->assignIfColumn($payload, $columns, 'templatealias', $alias);
+        }
+
+        foreach (['description', 'content', 'icon'] as $field) {
+            if (array_key_exists($field, $input)) {
+                $this->assignIfColumn($payload, $columns, $field, (string) $input[$field]);
+            }
+        }
+
+        if (array_key_exists('controller', $input) || array_key_exists('templatecontroller', $input)) {
+            $this->assignIfColumn($payload, $columns, 'templatecontroller', (string) ($input['controller'] ?? $input['templatecontroller'] ?? ''));
+        }
+
+        if (array_key_exists('view', $input) || array_key_exists('templateview', $input) || array_key_exists('template_view', $input)) {
+            $view = trim((string) ($input['view'] ?? $input['templateview'] ?? $input['template_view'] ?? ''));
+            foreach (['templateview', 'view', 'template_view'] as $column) {
+                if (isset($columns[$column])) {
+                    $payload[$column] = $view;
+                    break;
+                }
+            }
+        }
+
+        if ($payload === []) {
+            throw new RuntimeException('No template fields provided for update.');
+        }
+
+        DB::table($table)->where('id', $templateId)->update($payload);
+        $regenerated = $this->regenerateRegistryIfNeeded();
+
+        return [
+            'entity' => 'template',
+            'id' => $templateId,
+            'message' => 'Template updated.',
+            'regenerated' => $regenerated,
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    public function deleteTemplate(int $templateId): array
+    {
+        $table = $this->requireTable('templates_table', 'site_templates');
+        $contentTable = $this->requireTable('resources_table', 'site_content');
+        $pivotTable = $this->requireTable('template_tv_pivot_table', 'site_tmplvar_templates');
+        $this->assertExists($table, $templateId, 'Template');
+
+        $resourceCount = DB::table($contentTable)->where('template', $templateId)->count();
+        if ($resourceCount > 0) {
+            throw new RuntimeException('Template is used by existing resources.');
+        }
+
+        DB::transaction(function () use ($table, $pivotTable, $templateId): void {
+            DB::table($pivotTable)->where('templateid', $templateId)->delete();
+            DB::table($table)->where('id', $templateId)->delete();
+        });
+
+        $regenerated = $this->regenerateRegistryIfNeeded();
+
+        return [
+            'entity' => 'template',
+            'id' => $templateId,
+            'message' => 'Template deleted.',
+            'regenerated' => $regenerated,
+        ];
+    }
+
+    /** @param array<string,mixed> $input @return array<string,mixed> */
     public function createTv(array $input): array
     {
         $table = $this->requireTable('tvs_table', 'site_tmplvars');
@@ -111,6 +205,85 @@ class TemplateRegistryWriteService
             'entity' => 'tv',
             'id' => (int) $id,
             'message' => 'TV created.',
+            'regenerated' => $regenerated,
+        ];
+    }
+
+    /** @param array<string,mixed> $input @return array<string,mixed> */
+    public function updateTv(int $tvId, array $input): array
+    {
+        $table = $this->requireTable('tvs_table', 'site_tmplvars');
+        $columns = $this->columnMap($table);
+        $this->assertExists($table, $tvId, 'TV');
+
+        $payload = [];
+
+        if (array_key_exists('name', $input)) {
+            $name = trim((string) ($input['name'] ?? ''));
+            if ($name === '') {
+                throw new RuntimeException('Required field "name" is empty.');
+            }
+            if ($this->valueExistsExceptId($table, 'name', $name, $tvId)) {
+                throw new RuntimeException('TV name already exists.');
+            }
+            $this->assignIfColumn($payload, $columns, 'name', $name);
+        }
+
+        if (array_key_exists('type', $input)) {
+            $type = trim((string) ($input['type'] ?? ''));
+            if ($type === '') {
+                throw new RuntimeException('TV type is invalid.');
+            }
+            $this->assignIfColumn($payload, $columns, 'type', $type);
+        }
+
+        foreach (['caption', 'description', 'default_text', 'elements', 'display', 'display_params'] as $field) {
+            if (array_key_exists($field, $input)) {
+                $this->assignIfColumn($payload, $columns, $field, (string) $input[$field]);
+            }
+        }
+
+        foreach (['editor_type', 'category', 'lockcategory', 'rank'] as $field) {
+            if (array_key_exists($field, $input)) {
+                $this->assignIfColumn($payload, $columns, $field, (int) $input[$field]);
+            }
+        }
+
+        if ($payload === []) {
+            throw new RuntimeException('No TV fields provided for update.');
+        }
+
+        DB::table($table)->where('id', $tvId)->update($payload);
+        $regenerated = $this->regenerateRegistryIfNeeded();
+
+        return [
+            'entity' => 'tv',
+            'id' => $tvId,
+            'message' => 'TV updated.',
+            'regenerated' => $regenerated,
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    public function deleteTv(int $tvId): array
+    {
+        $table = $this->requireTable('tvs_table', 'site_tmplvars');
+        $pivotTable = $this->requireTable('template_tv_pivot_table', 'site_tmplvar_templates');
+        $valuesTable = $this->requireTable('tv_values_table', 'site_tmplvar_contentvalues');
+        $this->assertExists($table, $tvId, 'TV');
+
+        DB::transaction(function () use ($table, $pivotTable, $valuesTable, $tvId): void {
+            DB::table($pivotTable)->where('tmplvarid', $tvId)->delete();
+            DB::table($valuesTable)->where('tmplvarid', $tvId)->delete();
+            DB::table($table)->where('id', $tvId)->delete();
+        });
+
+        $regenerated = $this->regenerateRegistryIfNeeded();
+
+        return [
+            'entity' => 'tv',
+            'id' => $tvId,
+            'message' => 'TV deleted.',
             'regenerated' => $regenerated,
         ];
     }
@@ -186,6 +359,117 @@ class TemplateRegistryWriteService
             'entity' => 'resource',
             'id' => (int) ($result['resource_id'] ?? 0),
             'message' => 'Resource created.',
+            'regenerated' => $regenerated,
+        ];
+    }
+
+    /** @param array<string,mixed> $input @return array<string,mixed> */
+    public function updateResource(int $resourceId, array $input): array
+    {
+        $contentTable = $this->requireTable('resources_table', 'site_content');
+        $columns = $this->columnMap($contentTable);
+        $this->assertExists($contentTable, $resourceId, 'Resource');
+        $tvValues = isset($input['tv_values']) && is_array($input['tv_values']) ? $input['tv_values'] : [];
+
+        $payload = [];
+
+        foreach (['type', 'content'] as $field) {
+            if (array_key_exists($field, $input)) {
+                $this->assignIfColumn($payload, $columns, $field, (string) $input[$field]);
+            }
+        }
+
+        if (array_key_exists('content_type', $input)) {
+            $this->assignIfColumn($payload, $columns, 'contentType', (string) $input['content_type']);
+        }
+
+        foreach (['pagetitle', 'longtitle', 'description', 'alias', 'link_attributes', 'introtext', 'menutitle'] as $field) {
+            if (array_key_exists($field, $input)) {
+                $value = trim((string) $input[$field]);
+                if ($field === 'pagetitle' && $value === '') {
+                    throw new RuntimeException('Required field "pagetitle" is empty.');
+                }
+                $this->assignIfColumn($payload, $columns, $field, $value);
+            }
+        }
+
+        if (array_key_exists('template_id', $input) || array_key_exists('template', $input)) {
+            $templateId = (int) ($input['template_id'] ?? $input['template'] ?? 0);
+            if ($templateId <= 0) {
+                throw new RuntimeException('Template id must be greater than zero.');
+            }
+            $this->assertExists($this->requireTable('templates_table', 'site_templates'), $templateId, 'Template');
+            $this->assignIfColumn($payload, $columns, 'template', $templateId);
+        }
+
+        foreach (['pub_date', 'unpub_date', 'parent', 'menuindex', 'createdon', 'deletedon', 'publishedon', 'content_dispo'] as $field) {
+            if (array_key_exists($field, $input)) {
+                $this->assignIfColumn($payload, $columns, $field, (int) $input[$field]);
+            }
+        }
+
+        foreach (['published', 'isfolder', 'richtext', 'searchable', 'cacheable', 'deleted', 'hide_from_tree', 'privateweb', 'privatemgr', 'hidemenu', 'alias_visible'] as $field) {
+            if (array_key_exists($field, $input)) {
+                $this->assignIfColumn($payload, $columns, $field, $this->boolInt($input[$field]));
+            }
+        }
+
+        if (Schema::hasColumn($contentTable, 'editedon')) {
+            $payload['editedon'] = time();
+        }
+
+        if ($payload === [] && $tvValues === []) {
+            throw new RuntimeException('No resource fields provided for update.');
+        }
+
+        DB::transaction(function () use ($contentTable, $resourceId, $payload, $tvValues): void {
+            if ($payload !== []) {
+                DB::table($contentTable)->where('id', $resourceId)->update($payload);
+            }
+
+            foreach ($tvValues as $tvId => $value) {
+                $tvId = (int) $tvId;
+                if ($tvId <= 0) {
+                    continue;
+                }
+                $this->setResourceTvValueInternal($resourceId, $tvId, $value);
+            }
+        });
+
+        $regenerated = $this->regenerateRegistryIfNeeded();
+
+        return [
+            'entity' => 'resource',
+            'id' => $resourceId,
+            'message' => 'Resource updated.',
+            'regenerated' => $regenerated,
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    public function deleteResource(int $resourceId): array
+    {
+        $contentTable = $this->requireTable('resources_table', 'site_content');
+        $this->assertExists($contentTable, $resourceId, 'Resource');
+
+        $update = [
+            'deleted' => 1,
+            'published' => 0,
+        ];
+        if (Schema::hasColumn($contentTable, 'deletedon')) {
+            $update['deletedon'] = time();
+        }
+        if (Schema::hasColumn($contentTable, 'editedon')) {
+            $update['editedon'] = time();
+        }
+
+        DB::table($contentTable)->where('id', $resourceId)->update($update);
+        $regenerated = $this->regenerateRegistryIfNeeded();
+
+        return [
+            'entity' => 'resource',
+            'id' => $resourceId,
+            'message' => 'Resource deleted.',
             'regenerated' => $regenerated,
         ];
     }
@@ -505,6 +789,18 @@ class TemplateRegistryWriteService
         }
 
         return DB::table($table)->where($column, $value)->exists();
+    }
+
+    private function valueExistsExceptId(string $table, string $column, string $value, int $id): bool
+    {
+        if (!Schema::hasColumn($table, $column)) {
+            return false;
+        }
+
+        return DB::table($table)
+            ->where($column, $value)
+            ->where('id', '!=', $id)
+            ->exists();
     }
 
     private function boolInt(mixed $value): int

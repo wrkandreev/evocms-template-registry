@@ -141,8 +141,14 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - `GET /api/template-registry/pagebuilder-configs` список PageBuilder-конфигов
 - `GET /api/template-registry/pagebuilder-configs/{name}` один PageBuilder-конфиг по имени
 - `POST /api/template-registry/templates` создать шаблон
+- `PATCH /api/template-registry/templates/{templateId}` обновить шаблон
+- `DELETE /api/template-registry/templates/{templateId}` удалить шаблон (если не используется ресурсами)
 - `POST /api/template-registry/tvs` создать TV
+- `PATCH /api/template-registry/tvs/{tvId}` обновить TV
+- `DELETE /api/template-registry/tvs/{tvId}` удалить TV вместе со связями и значениями
 - `POST /api/template-registry/resources` создать ресурс
+- `PATCH /api/template-registry/resources/{resourceId}` обновить ресурс
+- `DELETE /api/template-registry/resources/{resourceId}` пометить ресурс удалённым
 - `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}` привязать TV к шаблону
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}` отвязать TV от шаблона
 - `PUT /api/template-registry/resources/{resourceId}/template` сменить шаблон ресурса
@@ -350,8 +356,14 @@ ClientSettings не является обязательным.
 - `GET /api/template-registry/pagebuilder-configs`
 - `GET /api/template-registry/pagebuilder-configs/{name}`
 - `POST /api/template-registry/templates`
+- `PATCH /api/template-registry/templates/{templateId}`
+- `DELETE /api/template-registry/templates/{templateId}`
 - `POST /api/template-registry/tvs`
+- `PATCH /api/template-registry/tvs/{tvId}`
+- `DELETE /api/template-registry/tvs/{tvId}`
 - `POST /api/template-registry/resources`
+- `PATCH /api/template-registry/resources/{resourceId}`
+- `DELETE /api/template-registry/resources/{resourceId}`
 - `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `PUT /api/template-registry/resources/{resourceId}/template`
@@ -411,6 +423,23 @@ Write API выключен по умолчанию.
 ```json
 {
   "published": true
+}
+```
+
+```json
+{
+  "caption": "Updated image",
+  "description": "Updated via API"
+}
+```
+
+```json
+{
+  "pagetitle": "Updated page title",
+  "template_id": 1,
+  "tv_values": {
+    "15": "Updated value"
+  }
 }
 ```
 
