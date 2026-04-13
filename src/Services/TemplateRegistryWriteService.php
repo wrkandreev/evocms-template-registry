@@ -346,6 +346,8 @@ class TemplateRegistryWriteService
         $result = DB::transaction(function () use ($contentTable, $payload, $tvValues): array {
             $resourceId = (int) DB::table($contentTable)->insertGetId($payload);
 
+            $this->markParentAsFolderIfNeeded((int) ($payload['parent'] ?? 0), $contentTable, $resourceId);
+
             foreach ($tvValues as $tvId => $value) {
                 $tvId = (int) $tvId;
                 if ($tvId <= 0) {
@@ -429,6 +431,10 @@ class TemplateRegistryWriteService
         DB::transaction(function () use ($contentTable, $resourceId, $payload, $tvValues): void {
             if ($payload !== []) {
                 DB::table($contentTable)->where('id', $resourceId)->update($payload);
+            }
+
+            if (array_key_exists('parent', $payload)) {
+                $this->markParentAsFolderIfNeeded((int) $payload['parent'], $contentTable, $resourceId);
             }
 
             foreach ($tvValues as $tvId => $value) {
@@ -711,6 +717,25 @@ class TemplateRegistryWriteService
         if (!$attached) {
             throw new RuntimeException('TV is not attached to resource template.');
         }
+    }
+
+    private function markParentAsFolderIfNeeded(int $parentId, string $contentTable, int $resourceId): void
+    {
+        if ($parentId <= 0 || $parentId === $resourceId) {
+            return;
+        }
+
+        $this->assertExists($contentTable, $parentId, 'Parent resource');
+        if (!Schema::hasColumn($contentTable, 'isfolder')) {
+            return;
+        }
+
+        $update = ['isfolder' => 1];
+        if (Schema::hasColumn($contentTable, 'editedon')) {
+            $update['editedon'] = time();
+        }
+
+        DB::table($contentTable)->where('id', $parentId)->update($update);
     }
 
     private function toAbsolutePath(string $path): string

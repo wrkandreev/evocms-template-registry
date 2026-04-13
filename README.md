@@ -422,6 +422,8 @@ Write API выключен по умолчанию.
 }
 ```
 
+When a resource is created under a parent (`parent > 0`), write API automatically marks that parent as `isfolder=1` so the child is visible in Evolution tree.
+
 ```json
 {
   "published": true

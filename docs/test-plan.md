@@ -127,6 +127,7 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Call `DELETE /api/template-registry/tvs/{tvId}` and verify TV row, template links and content values are removed.
 - Call `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}` and verify row appears in `site_tmplvar_templates`.
 - Call `POST /api/template-registry/resources` with `template_id` and verify a new row appears in `site_content`.
+- Call `POST /api/template-registry/resources` with `parent > 0` and verify the parent resource is automatically updated to `isfolder=1`.
 - Call `PATCH /api/template-registry/resources/{resourceId}` and verify selected resource fields change in `site_content`.
 - Call `DELETE /api/template-registry/resources/{resourceId}` and verify `deleted=1` and `published=0` in `site_content`.
 - Call `PUT /api/template-registry/resources/{resourceId}/template` and verify `template` changes in `site_content`.
