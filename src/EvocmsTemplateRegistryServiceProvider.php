@@ -8,8 +8,10 @@ use EvolutionCMS\ServiceProvider;
 use WrkAndreev\EvocmsTemplateRegistry\Console\GenerateTemplateRegistryCommand;
 use WrkAndreev\EvocmsTemplateRegistry\Console\InstallTemplateRegistryModuleCommand;
 use WrkAndreev\EvocmsTemplateRegistry\Console\InstallTemplateRegistryPluginCommand;
+use WrkAndreev\EvocmsTemplateRegistry\Console\InstallTemplateRegistryRoutesCommand;
 use WrkAndreev\EvocmsTemplateRegistry\Console\UninstallTemplateRegistryModuleCommand;
 use WrkAndreev\EvocmsTemplateRegistry\Console\UninstallTemplateRegistryPluginCommand;
+use WrkAndreev\EvocmsTemplateRegistry\Console\UninstallTemplateRegistryRoutesCommand;
 
 class EvocmsTemplateRegistryServiceProvider extends ServiceProvider
 {
@@ -37,6 +39,8 @@ class EvocmsTemplateRegistryServiceProvider extends ServiceProvider
                 UninstallTemplateRegistryModuleCommand::class,
                 InstallTemplateRegistryPluginCommand::class,
                 UninstallTemplateRegistryPluginCommand::class,
+                InstallTemplateRegistryRoutesCommand::class,
+                UninstallTemplateRegistryRoutesCommand::class,
             ]);
 
             if (method_exists($this, 'publishes')) {

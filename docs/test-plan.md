@@ -8,6 +8,7 @@ Validate safe behavior of template registry generation and API with optional Cli
 
 - Evolution CMS 3 CE project with package installed
 - API module installed (`php core/artisan template-registry:module:install`)
+- Web routes bridge installed (`php core/artisan template-registry:routes:install`)
 - Endpoint base: `/api/template-registry`
 
 ## Cases

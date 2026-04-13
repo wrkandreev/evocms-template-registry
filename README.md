@@ -49,6 +49,12 @@ php artisan vendor:publish --provider="WrkAndreev\EvocmsTemplateRegistry\EvocmsT
 php core/artisan template-registry:module:install
 ```
 
+Установить bridge для web-routes в Evolution CMS:
+
+```bash
+php core/artisan template-registry:routes:install
+```
+
 Создать/обновить плагин автогенерации (по умолчанию создается выключенным):
 
 ```bash
@@ -65,6 +71,12 @@ php core/artisan template-registry:plugin:uninstall
 
 ```bash
 php core/artisan template-registry:module:uninstall
+```
+
+Удалить bridge для web-routes:
+
+```bash
+php core/artisan template-registry:routes:uninstall
 ```
 
 ## Использование

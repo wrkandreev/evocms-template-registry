@@ -75,6 +75,18 @@ Option:
 
 - `--name="..."` (fallback match by module name)
 
+Install web routes bridge for frontend/runtime API access:
+
+```bash
+php core/artisan template-registry:routes:install
+```
+
+Remove web routes bridge:
+
+```bash
+php core/artisan template-registry:routes:uninstall
+```
+
 Create/update auto-regenerate plugin (disabled by default):
 
 ```bash
