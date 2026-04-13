@@ -121,7 +121,9 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Call `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}` and verify row appears in `site_tmplvar_templates`.
 - Call `POST /api/template-registry/resources` with `template_id` and verify a new row appears in `site_content`.
 - Call `PUT /api/template-registry/resources/{resourceId}/template` and verify `template` changes in `site_content`.
+- Call `PUT /api/template-registry/resources/{resourceId}/published` and verify `published`/`publishedon` change in `site_content`.
 - Call `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}` and verify row appears or updates in `site_tmplvar_contentvalues`.
+- Detach a TV from the resource template, then call `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}` and verify API returns `422`.
 - Call `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}` and verify link row is removed.
 - With `api.regenerate_after_write=true`, verify generated registry files are refreshed after successful writes.
 

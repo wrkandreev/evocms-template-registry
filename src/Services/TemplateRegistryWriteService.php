@@ -282,6 +282,36 @@ class TemplateRegistryWriteService
     }
 
     /** @return array<string,mixed> */
+    public function setResourcePublished(int $resourceId, bool $published): array
+    {
+        $contentTable = $this->requireTable('resources_table', 'site_content');
+        $this->assertExists($contentTable, $resourceId, 'Resource');
+
+        $timestamp = time();
+        $update = [
+            'published' => $published ? 1 : 0,
+        ];
+        if (Schema::hasColumn($contentTable, 'publishedon')) {
+            $update['publishedon'] = $published ? $timestamp : 0;
+        }
+        if (Schema::hasColumn($contentTable, 'editedon')) {
+            $update['editedon'] = $timestamp;
+        }
+
+        DB::table($contentTable)->where('id', $resourceId)->update($update);
+
+        $regenerated = $this->regenerateRegistryIfNeeded();
+
+        return [
+            'entity' => 'resource',
+            'message' => $published ? 'Resource published.' : 'Resource unpublished.',
+            'resource_id' => $resourceId,
+            'published' => $published,
+            'regenerated' => $regenerated,
+        ];
+    }
+
+    /** @return array<string,mixed> */
     public function setResourceTvValue(int $resourceId, int $tvId, mixed $value): array
     {
         $this->setResourceTvValueInternal($resourceId, $tvId, $value);
@@ -310,6 +340,7 @@ class TemplateRegistryWriteService
         $valuesTable = $this->requireTable('tv_values_table', 'site_tmplvar_contentvalues');
         $this->assertExists($contentTable, $resourceId, 'Resource');
         $this->assertExists($tvsTable, $tvId, 'TV');
+        $this->assertTvAttachedToResourceTemplate($resourceId, $tvId, $contentTable);
 
         DB::table($valuesTable)->updateOrInsert(
             [
@@ -369,6 +400,29 @@ class TemplateRegistryWriteService
         }
 
         return (string) reset($fallbacks);
+    }
+
+    private function assertTvAttachedToResourceTemplate(int $resourceId, int $tvId, string $contentTable): void
+    {
+        $pivotTable = $this->requireTable('template_tv_pivot_table', 'site_tmplvar_templates');
+        $resource = DB::table($contentTable)
+            ->select(['id', 'template'])
+            ->where('id', $resourceId)
+            ->first();
+
+        $templateId = (int) ($resource->template ?? 0);
+        if ($templateId <= 0) {
+            throw new RuntimeException('Resource has no valid template for TV assignment.');
+        }
+
+        $attached = DB::table($pivotTable)
+            ->where('templateid', $templateId)
+            ->where('tmplvarid', $tvId)
+            ->exists();
+
+        if (!$attached) {
+            throw new RuntimeException('TV is not attached to resource template.');
+        }
     }
 
     private function toAbsolutePath(string $path): string

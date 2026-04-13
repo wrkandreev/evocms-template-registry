@@ -146,6 +146,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}` привязать TV к шаблону
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}` отвязать TV от шаблона
 - `PUT /api/template-registry/resources/{resourceId}/template` сменить шаблон ресурса
+- `PUT /api/template-registry/resources/{resourceId}/published` опубликовать или снять с публикации ресурс
 - `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}` сохранить значение TV для ресурса
 
 Опциональные фильтры:
@@ -354,6 +355,7 @@ ClientSettings не является обязательным.
 - `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `PUT /api/template-registry/resources/{resourceId}/template`
+- `PUT /api/template-registry/resources/{resourceId}/published`
 - `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}`
 
 ### PageBuilder configs API
@@ -405,6 +407,14 @@ Write API выключен по умолчанию.
   }
 }
 ```
+
+```json
+{
+  "published": true
+}
+```
+
+`PUT /resources/{resourceId}/tv-values/{tvId}` now requires the TV to be attached to the resource's current template. Otherwise API returns `422`.
 
 ## Совместимость
 

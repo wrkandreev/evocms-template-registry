@@ -59,6 +59,13 @@ class TemplateRegistryWriteApiController
         });
     }
 
+    public function setResourcePublished(int $resourceId, Request $request)
+    {
+        return $this->handle(function (TemplateRegistryWriteService $service) use ($resourceId, $request) {
+            return $service->setResourcePublished($resourceId, (bool) $request->input('published'));
+        });
+    }
+
     private function handle(callable $callback, int $successStatus = 200)
     {
         try {

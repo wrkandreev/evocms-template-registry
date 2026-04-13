@@ -150,6 +150,7 @@ Default prefix: `/api/template-registry`
 - `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `PUT /api/template-registry/resources/{resourceId}/template`
+- `PUT /api/template-registry/resources/{resourceId}/published`
 - `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}`
 
 Optional single-template filter:
