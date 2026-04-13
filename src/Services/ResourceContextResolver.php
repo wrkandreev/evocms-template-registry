@@ -109,7 +109,7 @@ class ResourceContextResolver
      * @param array<string,mixed> $payload
      * @return array<int,array<string,mixed>>
      */
-    public function listResources(array $payload, int $limit = 100): array
+    public function listResources(array $payload, int $limit = 100, bool $includeDeleted = false): array
     {
         $contentTable = $this->resolveTableName((string) $this->cfg('resources_table', 'site_content'));
         if ($contentTable === null) {
@@ -118,11 +118,16 @@ class ResourceContextResolver
 
         $columns = $this->resourceListColumns($contentTable);
 
-        $rows = DB::table($contentTable)
+        $query = DB::table($contentTable)
             ->select($columns)
             ->orderBy('id')
-            ->limit(max(1, $limit))
-            ->get();
+            ->limit(max(1, $limit));
+
+        if (!$includeDeleted && Schema::hasColumn($contentTable, 'deleted')) {
+            $query->where('deleted', 0);
+        }
+
+        $rows = $query->get();
 
         $templatesById = [];
         foreach ((array) ($payload['templates'] ?? []) as $template) {

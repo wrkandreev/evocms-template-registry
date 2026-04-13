@@ -82,8 +82,9 @@ class TemplateRegistryApiController
             $resolver = new ResourceContextResolver($config);
             $limit = (int) $request->query('limit', 100);
             $limit = max(1, min($limit, 500));
+            $includeDeleted = filter_var($request->query('include_deleted', false), FILTER_VALIDATE_BOOL);
 
-            return \response()->json($resolver->listResources($payload, $limit));
+            return \response()->json($resolver->listResources($payload, $limit, $includeDeleted));
         } catch (RuntimeException $e) {
             return $this->errorResponse($e->getMessage());
         }

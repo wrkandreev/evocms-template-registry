@@ -171,6 +171,7 @@ Resource context for local AI/tools:
 - `GET /api/template-registry/resource-context?resource_id=123`
 
 `resources` returns created resources with template meta and key system fields useful for admin/tooling context.
+Deleted resources are excluded by default; use `include_deleted=1` when you need the full list including soft-deleted items.
 
 `resource-resolve` returns stable `resource_id` by URL/id with `matched_by` diagnostics.
 Use this endpoint first when you only have URL and need reliable resource id.

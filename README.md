@@ -135,6 +135,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - `GET /api/template-registry/templates/{id}` один шаблон по id
 - `GET /api/template-registry/tvs` только каталог TV
 - `GET /api/template-registry/resources` список ресурсов с template meta и основными системными полями
+  По умолчанию удалённые ресурсы скрыты. Для полного списка используйте `include_deleted=1`.
 - `GET /api/template-registry/stats` только статистика
 - `GET /api/template-registry/resource-resolve` быстрый резолв `resource_id` по URL или id
 - `GET /api/template-registry/resource-context` контекст ресурс/шаблон/TV по URL или id
@@ -159,6 +160,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 
 - `GET /api/template-registry?template_id=12` один шаблон через query
 - `GET /api/template-registry/resources?limit=100`
+- `GET /api/template-registry/resources?include_deleted=1`
 - `GET /api/template-registry/resource-resolve?url=/kontakty.html`
 - `GET /api/template-registry/resource-resolve?resource_id=123`
 - `GET /api/template-registry/resource-context?url=/catalog/iphone-15`

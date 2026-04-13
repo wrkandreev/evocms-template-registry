@@ -90,6 +90,8 @@ Validate safe behavior of template registry generation and API with optional Cli
 
 - Call `GET /api/template-registry/resources`.
 - Verify response is a list of created resources with `id`, `pagetitle`, `alias`, `template_id`, `template_name` and system fields like `menuindex`, `introtext`, `published`, `deleted`.
+- Verify soft-deleted resources are excluded by default.
+- Call `GET /api/template-registry/resources?include_deleted=1` and verify soft-deleted resources are included.
 - Call `GET /api/template-registry/resources?limit=1` and verify limit is applied.
 
 10. PageBuilder configs API
