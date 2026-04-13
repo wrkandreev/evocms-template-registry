@@ -139,6 +139,8 @@ Default prefix: `/api/template-registry`
 - `GET /api/template-registry/templates/{id}`
 - `GET /api/template-registry/tvs`
 - `GET /api/template-registry/resources`
+- `GET /api/template-registry/resources/{id}`
+- `GET /api/template-registry/resources/{id}/children`
 - `GET /api/template-registry/stats`
 - `GET /api/template-registry/resource-resolve`
 - `GET /api/template-registry/resource-context`
@@ -153,6 +155,7 @@ Default prefix: `/api/template-registry`
 - `POST /api/template-registry/resources`
 - `PATCH /api/template-registry/resources/{resourceId}`
 - `DELETE /api/template-registry/resources/{resourceId}`
+- `PUT /api/template-registry/resources/{resourceId}/restore`
 - `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `PUT /api/template-registry/resources/{resourceId}/template`

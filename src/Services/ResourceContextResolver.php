@@ -187,6 +187,39 @@ class ResourceContextResolver
         return $result;
     }
 
+    /** @param array<string,mixed> $payload @return array<string,mixed>|null */
+    public function resourceById(array $payload, int $resourceId, bool $includeDeleted = false): ?array
+    {
+        if ($resourceId <= 0) {
+            return null;
+        }
+
+        foreach ($this->listResources($payload, 500, $includeDeleted) as $resource) {
+            if ((int) ($resource['id'] ?? 0) === $resourceId) {
+                return $resource;
+            }
+        }
+
+        return null;
+    }
+
+    /** @param array<string,mixed> $payload @return array<int,array<string,mixed>> */
+    public function childResources(array $payload, int $parentId, int $limit = 100, bool $includeDeleted = false): array
+    {
+        if ($parentId <= 0) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($this->listResources($payload, $limit, $includeDeleted) as $resource) {
+            if ((int) ($resource['parent'] ?? 0) === $parentId) {
+                $result[] = $resource;
+            }
+        }
+
+        return $result;
+    }
+
     /** @return array<int,string> */
     private function resourceListColumns(string $contentTable): array
     {

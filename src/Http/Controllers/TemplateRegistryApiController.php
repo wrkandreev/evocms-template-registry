@@ -90,6 +90,44 @@ class TemplateRegistryApiController
         }
     }
 
+    public function resourceById(int $id, Request $request)
+    {
+        try {
+            $payload = $this->payload();
+            $config = (array) \config('template-registry', []);
+            $resolver = new ResourceContextResolver($config);
+            $includeDeleted = filter_var($request->query('include_deleted', false), FILTER_VALIDATE_BOOL);
+            $resource = $resolver->resourceById($payload, $id, $includeDeleted);
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+
+        if ($resource === null) {
+            return \response()->json([
+                'message' => 'Resource not found.',
+            ], 404);
+        }
+
+        return \response()->json($resource);
+    }
+
+    public function resourceChildren(int $id, Request $request)
+    {
+        try {
+            $payload = $this->payload();
+            $config = (array) \config('template-registry', []);
+            $resolver = new ResourceContextResolver($config);
+            $limit = (int) $request->query('limit', 100);
+            $limit = max(1, min($limit, 500));
+            $includeDeleted = filter_var($request->query('include_deleted', false), FILTER_VALIDATE_BOOL);
+            $resources = $resolver->childResources($payload, $id, $limit, $includeDeleted);
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+
+        return \response()->json($resources);
+    }
+
     public function stats()
     {
         try {

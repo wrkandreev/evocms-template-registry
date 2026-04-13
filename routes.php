@@ -55,6 +55,8 @@ Route::prefix($apiPrefix)
         Route::get('/templates/{id}', [TemplateRegistryApiController::class, 'templateById'])->where('id', '[0-9]+');
         Route::get('/tvs', [TemplateRegistryApiController::class, 'tvCatalog']);
         Route::get('/resources', [TemplateRegistryApiController::class, 'resources']);
+        Route::get('/resources/{id}', [TemplateRegistryApiController::class, 'resourceById'])->where('id', '[0-9]+');
+        Route::get('/resources/{id}/children', [TemplateRegistryApiController::class, 'resourceChildren'])->where('id', '[0-9]+');
         Route::get('/stats', [TemplateRegistryApiController::class, 'stats']);
         Route::get('/resource-resolve', [TemplateRegistryApiController::class, 'resourceResolve']);
         Route::get('/resource-context', [TemplateRegistryApiController::class, 'resourceContext']);
@@ -77,6 +79,7 @@ Route::prefix($apiPrefix)
         Route::post('/resources', [TemplateRegistryWriteApiController::class, 'createResource']);
         Route::patch('/resources/{resourceId}', [TemplateRegistryWriteApiController::class, 'updateResource'])->where('resourceId', '[0-9]+');
         Route::delete('/resources/{resourceId}', [TemplateRegistryWriteApiController::class, 'deleteResource'])->where('resourceId', '[0-9]+');
+        Route::put('/resources/{resourceId}/restore', [TemplateRegistryWriteApiController::class, 'restoreResource'])->where('resourceId', '[0-9]+');
         Route::put('/templates/{templateId}/tvs/{tvId}', [TemplateRegistryWriteApiController::class, 'attachTvToTemplate'])->where(['templateId' => '[0-9]+', 'tvId' => '[0-9]+']);
         Route::delete('/templates/{templateId}/tvs/{tvId}', [TemplateRegistryWriteApiController::class, 'detachTvFromTemplate'])->where(['templateId' => '[0-9]+', 'tvId' => '[0-9]+']);
         Route::put('/resources/{resourceId}/template', [TemplateRegistryWriteApiController::class, 'setResourceTemplate'])->where('resourceId', '[0-9]+');

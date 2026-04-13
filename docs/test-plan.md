@@ -92,6 +92,8 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Verify response is a list of created resources with `id`, `pagetitle`, `alias`, `template_id`, `template_name` and system fields like `menuindex`, `introtext`, `published`, `deleted`.
 - Verify soft-deleted resources are excluded by default.
 - Call `GET /api/template-registry/resources?include_deleted=1` and verify soft-deleted resources are included.
+- Call `GET /api/template-registry/resources/{id}` and verify one exact resource is returned.
+- Call `GET /api/template-registry/resources/{id}/children` and verify only direct children are returned.
 - Call `GET /api/template-registry/resources?limit=1` and verify limit is applied.
 
 10. PageBuilder configs API
@@ -130,6 +132,7 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Call `POST /api/template-registry/resources` with `parent > 0` and verify the parent resource is automatically updated to `isfolder=1`.
 - Call `PATCH /api/template-registry/resources/{resourceId}` and verify selected resource fields change in `site_content`.
 - Call `DELETE /api/template-registry/resources/{resourceId}` and verify `deleted=1` and `published=0` in `site_content`.
+- Call `PUT /api/template-registry/resources/{resourceId}/restore` and verify `deleted=0` and `deletedon=0` in `site_content`.
 - Call `PUT /api/template-registry/resources/{resourceId}/template` and verify `template` changes in `site_content`.
 - Call `PUT /api/template-registry/resources/{resourceId}/published` and verify `published`/`publishedon` change in `site_content`.
 - Call `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}` and verify row appears or updates in `site_tmplvar_contentvalues`.

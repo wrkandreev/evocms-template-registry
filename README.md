@@ -136,6 +136,8 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - `GET /api/template-registry/tvs` только каталог TV
 - `GET /api/template-registry/resources` список ресурсов с template meta и основными системными полями
   По умолчанию удалённые ресурсы скрыты. Для полного списка используйте `include_deleted=1`.
+- `GET /api/template-registry/resources/{id}` один ресурс по id
+- `GET /api/template-registry/resources/{id}/children` дети ресурса по id родителя
 - `GET /api/template-registry/stats` только статистика
 - `GET /api/template-registry/resource-resolve` быстрый резолв `resource_id` по URL или id
 - `GET /api/template-registry/resource-context` контекст ресурс/шаблон/TV по URL или id
@@ -150,6 +152,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - `POST /api/template-registry/resources` создать ресурс
 - `PATCH /api/template-registry/resources/{resourceId}` обновить ресурс
 - `DELETE /api/template-registry/resources/{resourceId}` пометить ресурс удалённым
+- `PUT /api/template-registry/resources/{resourceId}/restore` восстановить soft-deleted ресурс
 - `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}` привязать TV к шаблону
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}` отвязать TV от шаблона
 - `PUT /api/template-registry/resources/{resourceId}/template` сменить шаблон ресурса
@@ -161,6 +164,8 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - `GET /api/template-registry?template_id=12` один шаблон через query
 - `GET /api/template-registry/resources?limit=100`
 - `GET /api/template-registry/resources?include_deleted=1`
+- `GET /api/template-registry/resources/7`
+- `GET /api/template-registry/resources/7/children`
 - `GET /api/template-registry/resource-resolve?url=/kontakty.html`
 - `GET /api/template-registry/resource-resolve?resource_id=123`
 - `GET /api/template-registry/resource-context?url=/catalog/iphone-15`
@@ -366,6 +371,7 @@ ClientSettings не является обязательным.
 - `POST /api/template-registry/resources`
 - `PATCH /api/template-registry/resources/{resourceId}`
 - `DELETE /api/template-registry/resources/{resourceId}`
+- `PUT /api/template-registry/resources/{resourceId}/restore`
 - `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `PUT /api/template-registry/resources/{resourceId}/template`

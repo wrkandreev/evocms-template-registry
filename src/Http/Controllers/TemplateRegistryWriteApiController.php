@@ -108,6 +108,13 @@ class TemplateRegistryWriteApiController
         });
     }
 
+    public function restoreResource(int $resourceId)
+    {
+        return $this->handle(function (TemplateRegistryWriteService $service) use ($resourceId) {
+            return $service->restoreResource($resourceId);
+        });
+    }
+
     private function handle(callable $callback, int $successStatus = 200)
     {
         try {

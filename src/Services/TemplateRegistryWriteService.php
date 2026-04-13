@@ -484,6 +484,33 @@ class TemplateRegistryWriteService
         ];
     }
 
+    /** @return array<string,mixed> */
+    public function restoreResource(int $resourceId): array
+    {
+        $contentTable = $this->requireTable('resources_table', 'site_content');
+        $this->assertExists($contentTable, $resourceId, 'Resource');
+
+        $update = [
+            'deleted' => 0,
+        ];
+        if (Schema::hasColumn($contentTable, 'deletedon')) {
+            $update['deletedon'] = 0;
+        }
+        if (Schema::hasColumn($contentTable, 'editedon')) {
+            $update['editedon'] = time();
+        }
+
+        DB::table($contentTable)->where('id', $resourceId)->update($update);
+        $regenerated = $this->regenerateRegistryIfNeeded();
+
+        return [
+            'entity' => 'resource',
+            'id' => $resourceId,
+            'message' => 'Resource restored.',
+            'regenerated' => $regenerated,
+        ];
+    }
+
     /** @param array<string,mixed> $input @return array<string,mixed> */
     public function attachTvToTemplate(int $templateId, int $tvId, array $input = []): array
     {
