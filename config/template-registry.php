@@ -70,12 +70,20 @@ return [
         'customtv_file' => 'assets/tvs/pagebuilder/pagebuilder.customtv.php',
     ],
 
+    'migrations' => [
+        'path' => 'core/custom/template-registry/migrations',
+        'table' => 'template_registry_migrations',
+    ],
+
     'api' => [
         'enabled' => true,
         'prefix' => 'api/template-registry',
-        'middleware' => ['web'],
+        'middleware' => ['global'],
         'require_manager' => true,
         'access_token' => '',
+        'write_enabled' => false,
+        'write_access_token' => '',
+        'regenerate_after_write' => true,
         'admin_prefix' => 'template-registry-admin',
     ],
 ];

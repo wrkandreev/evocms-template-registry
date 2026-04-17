@@ -8,6 +8,7 @@ Validate safe behavior of template registry generation and API with optional Cli
 
 - Evolution CMS 3 CE project with package installed
 - API module installed (`php core/artisan template-registry:module:install`)
+- Web routes bridge installed (`php core/artisan template-registry:routes:install`)
 - Endpoint base: `/api/template-registry`
 
 ## Cases
@@ -89,6 +90,10 @@ Validate safe behavior of template registry generation and API with optional Cli
 
 - Call `GET /api/template-registry/resources`.
 - Verify response is a list of created resources with `id`, `pagetitle`, `alias`, `template_id`, `template_name` and system fields like `menuindex`, `introtext`, `published`, `deleted`.
+- Verify soft-deleted resources are excluded by default.
+- Call `GET /api/template-registry/resources?include_deleted=1` and verify soft-deleted resources are included.
+- Call `GET /api/template-registry/resources/{id}` and verify one exact resource is returned.
+- Call `GET /api/template-registry/resources/{id}/children` and verify only direct children are returned.
 - Call `GET /api/template-registry/resources?limit=1` and verify limit is applied.
 
 10. PageBuilder configs API
@@ -104,7 +109,47 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Call endpoint with unknown name and verify `404`.
 - Temporarily remove/rename config dir and verify list endpoint returns `exists = false` with empty `configs`.
 
-11. Auto-regenerate plugin
+11. Write API access control
+
+- Open module page and enable `Write API status`.
+- Set `write_access_token` and save settings.
+- Call a write endpoint without manager session and without token: verify `403`.
+- Call the same endpoint with invalid `X-Template-Registry-Write-Token`: verify `403`.
+- Call with valid `X-Template-Registry-Write-Token`: verify request is allowed.
+- If `write_access_token` equals `access_token`, call the same write endpoint with only `X-Template-Registry-Token`: verify request is allowed.
+- Disable write API and verify all write endpoints return `403`.
+
+12. Write API operations
+
+- Call `POST /api/template-registry/templates` and verify a new row appears in `site_templates`.
+- Call `PATCH /api/template-registry/templates/{templateId}` and verify template fields change in `site_templates`.
+- Call `DELETE /api/template-registry/templates/{templateId}` for an unused template and verify it is removed.
+- Call `DELETE /api/template-registry/templates/{templateId}` for a template used by resources and verify API returns `422`.
+- Call `POST /api/template-registry/tvs` and verify a new row appears in `site_tmplvars`.
+- Call `PATCH /api/template-registry/tvs/{tvId}` and verify TV fields change in `site_tmplvars`.
+- Call `DELETE /api/template-registry/tvs/{tvId}` and verify TV row, template links and content values are removed.
+- Call `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}` and verify row appears in `site_tmplvar_templates`.
+- Call `POST /api/template-registry/resources` with `template_id` and verify a new row appears in `site_content`.
+- Call `POST /api/template-registry/resources` with `parent > 0` and verify the parent resource is automatically updated to `isfolder=1`.
+- Call `PATCH /api/template-registry/resources/{resourceId}` and verify selected resource fields change in `site_content`.
+- Call `DELETE /api/template-registry/resources/{resourceId}` and verify `deleted=1` and `published=0` in `site_content`.
+- Call `PUT /api/template-registry/resources/{resourceId}/restore` and verify `deleted=0` and `deletedon=0` in `site_content`.
+- Call `PUT /api/template-registry/resources/{resourceId}/template` and verify `template` changes in `site_content`.
+- Call `PUT /api/template-registry/resources/{resourceId}/published` and verify `published`/`publishedon` change in `site_content`.
+- Call `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}` and verify row appears or updates in `site_tmplvar_contentvalues`.
+- Detach a TV from the resource template, then call `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}` and verify API returns `422`.
+- Call `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}` and verify link row is removed.
+- With `api.regenerate_after_write=true`, verify generated registry files are refreshed after successful writes.
+
+13. Migration engine
+
+- Run `php core/artisan template-registry:migrate --dry-run` and verify pending migrations are shown as `would_apply` without DB changes.
+- Apply one migration with `php core/artisan template-registry:migrate` and verify status becomes `applied`.
+- Re-run the same migration and verify status becomes `skipped`.
+- Change migration file contents after apply and verify command fails with checksum mismatch.
+- Verify CLI failure output contains machine-readable code in square brackets.
+
+14. Auto-regenerate plugin
 
 - Run `php core/artisan template-registry:plugin:install` and verify plugin is created as disabled.
 - Enable plugin (from module page or `template-registry:plugin:install --enabled`).

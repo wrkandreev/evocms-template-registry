@@ -35,6 +35,13 @@ Optional config publish:
 php artisan vendor:publish --provider="WrkAndreev\EvocmsTemplateRegistry\EvocmsTemplateRegistryServiceProvider" --tag="evocms-template-registry-config"
 ```
 
+Fresh Evolution CMS 3 CE install note:
+
+- if the package was installed from `core/composer.json` and `php artisan list` does not show `template-registry:*`, create `core/custom/config/app/providers/EvocmsTemplateRegistryServiceProvider.php`
+- file contents must be `return WrkAndreev\EvocmsTemplateRegistry\EvocmsTemplateRegistryServiceProvider::class;`
+- then run `vendor:publish` again and only after that run `template-registry:routes:install`, `template-registry:module:install`, `template-registry:plugin:install`
+- reason: on this Evo setup `package:discover` may scan `core/custom/composer.json` rather than registering packages added only to `core/composer.json`
+
 Published config path:
 
 - `core/custom/config/template-registry.php`
@@ -52,6 +59,30 @@ Options:
 - `--output=` output directory
 - `--format=json|md|php|all`
 - `--strict` fail on missing controller/view
+
+Create content migration file:
+
+```bash
+php core/artisan template-registry:migrate:make CreateT1Assets
+```
+
+Apply content migrations:
+
+```bash
+php core/artisan template-registry:migrate
+```
+
+Dry-run content migrations:
+
+```bash
+php core/artisan template-registry:migrate --dry-run
+```
+
+Show content migration status:
+
+```bash
+php core/artisan template-registry:migrate:status
+```
 
 Create/update manager module (shown in CMS Modules menu):
 
@@ -74,6 +105,18 @@ php core/artisan template-registry:module:uninstall
 Option:
 
 - `--name="..."` (fallback match by module name)
+
+Install web routes bridge for frontend/runtime API access:
+
+```bash
+php core/artisan template-registry:routes:install
+```
+
+Remove web routes bridge:
+
+```bash
+php core/artisan template-registry:routes:uninstall
+```
 
 Create/update auto-regenerate plugin (disabled by default):
 
@@ -110,6 +153,20 @@ Resolution rules:
 - then `output` from config
 - if both empty, first existing parent path from `output_fallbacks` is used
 
+Content migration path by default:
+
+- `core/custom/template-registry/migrations`
+
+Decision:
+
+- migration engine stays in the package dependency
+- migration files are project-level and must live under `core/custom`, not in `vendor` and not inside project package `Main`
+- default location is `core/custom/template-registry/migrations`
+
+Applied migrations state table:
+
+- `template_registry_migrations`
+
 Generated payload files:
 
 - `templates.generated.json`
@@ -127,11 +184,28 @@ Default prefix: `/api/template-registry`
 - `GET /api/template-registry/templates/{id}`
 - `GET /api/template-registry/tvs`
 - `GET /api/template-registry/resources`
+- `GET /api/template-registry/resources/{id}`
+- `GET /api/template-registry/resources/{id}/children`
 - `GET /api/template-registry/stats`
 - `GET /api/template-registry/resource-resolve`
 - `GET /api/template-registry/resource-context`
 - `GET /api/template-registry/pagebuilder-configs`
 - `GET /api/template-registry/pagebuilder-configs/{name}`
+- `POST /api/template-registry/templates`
+- `PATCH /api/template-registry/templates/{templateId}`
+- `DELETE /api/template-registry/templates/{templateId}`
+- `POST /api/template-registry/tvs`
+- `PATCH /api/template-registry/tvs/{tvId}`
+- `DELETE /api/template-registry/tvs/{tvId}`
+- `POST /api/template-registry/resources`
+- `PATCH /api/template-registry/resources/{resourceId}`
+- `DELETE /api/template-registry/resources/{resourceId}`
+- `PUT /api/template-registry/resources/{resourceId}/restore`
+- `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}`
+- `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
+- `PUT /api/template-registry/resources/{resourceId}/template`
+- `PUT /api/template-registry/resources/{resourceId}/published`
+- `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}`
 
 Optional single-template filter:
 
@@ -145,6 +219,7 @@ Resource context for local AI/tools:
 - `GET /api/template-registry/resource-context?resource_id=123`
 
 `resources` returns created resources with template meta and key system fields useful for admin/tooling context.
+Deleted resources are excluded by default; use `include_deleted=1` when you need the full list including soft-deleted items.
 
 `resource-resolve` returns stable `resource_id` by URL/id with `matched_by` diagnostics.
 Use this endpoint first when you only have URL and need reliable resource id.
@@ -167,6 +242,7 @@ Access is protected by middleware:
 1. Global enabled/disabled state (toggle in manager module)
 2. Optional token bypass for local tools
 3. Manager session check (default)
+4. Write operations require separate write flag/token or manager session
 
 ### Config keys (`core/custom/config/template-registry.php`)
 
@@ -175,6 +251,9 @@ Access is protected by middleware:
 - `api.middleware` route middleware list
 - `api.require_manager` require manager auth (`true` by default)
 - `api.access_token` optional token for local tools (header: `X-Template-Registry-Token`)
+- `api.write_enabled` enable write API (`false` by default)
+- `api.write_access_token` optional write token (header: `X-Template-Registry-Write-Token`)
+- `api.regenerate_after_write` rewrite generated registry files after successful write operation
 - `api.admin_prefix` module page prefix (default `template-registry-admin`)
 
 ### Runtime state file
@@ -246,6 +325,7 @@ Manager route:
 - `GET /template-registry-admin/access`
 
 Use this page to switch API on/off, edit token value in `custom/config/template-registry.php`, and manage auto-regenerate plugin state.
+The same page also exposes write API enable/token settings.
 
 ## Important conventions for agents
 

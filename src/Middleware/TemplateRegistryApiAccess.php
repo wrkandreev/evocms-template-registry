@@ -24,11 +24,17 @@ class TemplateRegistryApiAccess
         }
 
         $accessToken = trim((string) ($api['access_token'] ?? ''));
-        if ($accessToken !== '') {
-            $requestToken = trim((string) $request->header('X-Template-Registry-Token', ''));
-            if ($requestToken !== '' && hash_equals($accessToken, $requestToken)) {
-                return $next($request);
-            }
+        $writeToken = trim((string) ($api['write_access_token'] ?? ''));
+        $requestToken = trim((string) $request->header('X-Template-Registry-Token', ''));
+        $requestWriteToken = trim((string) $request->header('X-Template-Registry-Write-Token', ''));
+
+        if ($accessToken !== '' && $requestToken !== '' && hash_equals($accessToken, $requestToken)) {
+            return $next($request);
+        }
+
+        // A valid write token should also pass base API access checks.
+        if ($writeToken !== '' && $requestWriteToken !== '' && hash_equals($writeToken, $requestWriteToken)) {
+            return $next($request);
         }
 
         $requireManager = (bool) ($api['require_manager'] ?? true);

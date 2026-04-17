@@ -49,6 +49,20 @@ php artisan vendor:publish --provider="WrkAndreev\EvocmsTemplateRegistry\EvocmsT
 php core/artisan template-registry:module:install
 ```
 
+Установить bridge для web-routes в Evolution CMS:
+
+```bash
+php core/artisan template-registry:routes:install
+```
+
+Важно:
+
+- Для работы web API на реальном сайте пакет должен лежать в `core/vendor` как обычные файлы, не как symlink.
+- Если пакет установлен через `path` repository для тестов, используйте `"options": {"symlink": false}`.
+- На некоторых окружениях symlink-вариант может ломать `core/custom/routes.php` и приводить к `500` в web-runtime.
+- На свежих установках Evolution CMS 3 CE `php artisan package:discover` может не зарегистрировать service provider пакета, если пакет добавлен в `core/composer.json`, потому что discovery в этом окружении сканирует `core/custom/composer.json` и `vendor/*/composer.json` через него.
+- Если после установки нет команд `template-registry:*`, создайте файл `core/custom/config/app/providers/EvocmsTemplateRegistryServiceProvider.php` со строкой `return WrkAndreev\EvocmsTemplateRegistry\EvocmsTemplateRegistryServiceProvider::class;`, затем повторите `vendor:publish` и команды `template-registry:*`.
+
 Создать/обновить плагин автогенерации (по умолчанию создается выключенным):
 
 ```bash
@@ -65,6 +79,36 @@ php core/artisan template-registry:plugin:uninstall
 
 ```bash
 php core/artisan template-registry:module:uninstall
+```
+
+Удалить bridge для web-routes:
+
+```bash
+php core/artisan template-registry:routes:uninstall
+```
+
+Создать migration-файл для переносимых content-изменений:
+
+```bash
+php core/artisan template-registry:migrate:make CreateT1Assets
+```
+
+Применить content migrations:
+
+```bash
+php core/artisan template-registry:migrate
+```
+
+Dry run без изменений в БД:
+
+```bash
+php core/artisan template-registry:migrate --dry-run
+```
+
+Посмотреть статус content migrations:
+
+```bash
+php core/artisan template-registry:migrate:status
 ```
 
 ## Использование
@@ -105,6 +149,133 @@ php core/artisan template-registry:generate
 php core/artisan template-registry:generate --output=core/custom/packages/Main/generated/registry --format=all --strict
 ```
 
+Рекомендуемый порядок для нового инстанса:
+
+1. Установить пакет через Composer так, чтобы он оказался в `core/vendor` без symlink.
+2. Проверить, что появились команды `template-registry:*` в `php artisan list`.
+3. Если команд нет, создать `core/custom/config/app/providers/EvocmsTemplateRegistryServiceProvider.php` с `return WrkAndreev\EvocmsTemplateRegistry\EvocmsTemplateRegistryServiceProvider::class;`.
+4. Выполнить `php artisan vendor:publish --provider="WrkAndreev\EvocmsTemplateRegistry\EvocmsTemplateRegistryServiceProvider" --tag="evocms-template-registry-config"`.
+5. Выполнить `php core/artisan template-registry:routes:install`.
+6. Выполнить `php core/artisan template-registry:module:install`.
+7. При необходимости выполнить `php core/artisan template-registry:plugin:install` или `php core/artisan template-registry:plugin:install --enabled`.
+8. При необходимости включить write API в `custom/config/template-registry.php` или через manager module.
+9. Проверить `GET /api/template-registry` и `GET /api/template-registry/templates`.
+
+Решение по content migrations:
+
+- migration engine живет в пакете как dependency
+- сами migration files живут в проекте, а не в пакете и не в `vendor`
+- default path: `core/custom/template-registry/migrations`
+- это project-level директория, чтобы migrations можно было хранить в git проекта независимо от способа установки пакета
+
+## Content Migrations
+
+Для переносимых изменений между инстансами используйте declarative migrations, а не raw DB ids.
+
+Путь по умолчанию:
+
+- `core/custom/template-registry/migrations`
+
+Состояние applied migrations хранится в таблице:
+
+- `template_registry_migrations`
+
+Рекомендуемые стабильные ключи:
+
+- templates: `alias`
+- TVs: `name`
+- resources: `path` или `alias + parent`
+
+Пример migration-файла:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+return [
+    'name' => '2026_04_13_130000_create_t1_assets',
+    'description' => 'Create template, TVs and one resource',
+    'operations' => [
+        [
+            'op' => 'upsert_template',
+            'match' => ['alias' => 't1'],
+            'data' => [
+                'name' => 'T1',
+                'alias' => 't1',
+            ],
+        ],
+        [
+            'op' => 'upsert_tv',
+            'match' => ['name' => 'tv_t1_img'],
+            'data' => [
+                'name' => 'tv_t1_img',
+                'caption' => 'TV T1 image',
+                'type' => 'image',
+            ],
+        ],
+        [
+            'op' => 'attach_tv_to_template',
+            'template' => ['alias' => 't1'],
+            'tv' => ['name' => 'tv_t1_img'],
+            'rank' => 0,
+        ],
+        [
+            'op' => 'upsert_resource',
+            'match' => ['alias' => 'resurs-1', 'parent' => ['id' => 0]],
+            'data' => [
+                'pagetitle' => 'Ресурс 1',
+                'alias' => 'resurs-1',
+                'template' => ['alias' => 't1'],
+                'parent' => 0,
+                'published' => true,
+            ],
+        ],
+    ],
+];
+```
+
+Поддерживаемые операции v1:
+
+- `upsert_template`
+- `update_template`
+- `delete_template`
+- `upsert_tv`
+- `update_tv`
+- `delete_tv`
+- `attach_tv_to_template`
+- `detach_tv_from_template`
+- `upsert_resource`
+- `update_resource`
+- `set_resource_template`
+- `set_resource_published`
+- `set_resource_tv_value`
+- `delete_resource`
+- `restore_resource`
+
+Migration engine идемпотентен на уровне файла:
+
+- уже применённый файл с тем же checksum будет пропущен
+- если checksum applied migration изменился, команда завершится с ошибкой
+
+### Error codes
+
+Write API errors now return machine-readable `code` together with `message`, for example:
+
+```json
+{
+  "ok": false,
+  "code": "template_not_found",
+  "message": "Template not found."
+}
+```
+
+Migration command failures print the same code in CLI output, for example:
+
+```text
+[migration_checksum_changed] Migration checksum changed after apply: ...
+```
+
 ## API
 
 Пакет также отдает те же данные реестра через HTTP API (для админских инструментов/агентов).
@@ -123,14 +294,37 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 - `GET /api/template-registry/templates/{id}` один шаблон по id
 - `GET /api/template-registry/tvs` только каталог TV
 - `GET /api/template-registry/resources` список ресурсов с template meta и основными системными полями
+  По умолчанию удалённые ресурсы скрыты. Для полного списка используйте `include_deleted=1`.
+- `GET /api/template-registry/resources/{id}` один ресурс по id
+- `GET /api/template-registry/resources/{id}/children` дети ресурса по id родителя
 - `GET /api/template-registry/stats` только статистика
 - `GET /api/template-registry/resource-resolve` быстрый резолв `resource_id` по URL или id
 - `GET /api/template-registry/resource-context` контекст ресурс/шаблон/TV по URL или id
+- `GET /api/template-registry/pagebuilder-configs` список PageBuilder-конфигов
+- `GET /api/template-registry/pagebuilder-configs/{name}` один PageBuilder-конфиг по имени
+- `POST /api/template-registry/templates` создать шаблон
+- `PATCH /api/template-registry/templates/{templateId}` обновить шаблон
+- `DELETE /api/template-registry/templates/{templateId}` удалить шаблон (если не используется ресурсами)
+- `POST /api/template-registry/tvs` создать TV
+- `PATCH /api/template-registry/tvs/{tvId}` обновить TV
+- `DELETE /api/template-registry/tvs/{tvId}` удалить TV вместе со связями и значениями
+- `POST /api/template-registry/resources` создать ресурс
+- `PATCH /api/template-registry/resources/{resourceId}` обновить ресурс
+- `DELETE /api/template-registry/resources/{resourceId}` пометить ресурс удалённым
+- `PUT /api/template-registry/resources/{resourceId}/restore` восстановить soft-deleted ресурс
+- `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}` привязать TV к шаблону
+- `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}` отвязать TV от шаблона
+- `PUT /api/template-registry/resources/{resourceId}/template` сменить шаблон ресурса
+- `PUT /api/template-registry/resources/{resourceId}/published` опубликовать или снять с публикации ресурс
+- `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}` сохранить значение TV для ресурса
 
 Опциональные фильтры:
 
 - `GET /api/template-registry?template_id=12` один шаблон через query
 - `GET /api/template-registry/resources?limit=100`
+- `GET /api/template-registry/resources?include_deleted=1`
+- `GET /api/template-registry/resources/7`
+- `GET /api/template-registry/resources/7/children`
 - `GET /api/template-registry/resource-resolve?url=/kontakty.html`
 - `GET /api/template-registry/resource-resolve?resource_id=123`
 - `GET /api/template-registry/resource-context?url=/catalog/iphone-15`
@@ -163,6 +357,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 
 На этой странице можно включать/выключать доступ к API, менять access token без ручного редактирования конфига и смотреть preview сгенерированных сущностей (templates/TV/resources/ClientSettings).
 Там же отображается состояние плагина автогенерации и кнопки его установки/включения/выключения.
+Для write API там же доступны отдельные настройки: `write_enabled` и `write_access_token`.
 Путь можно изменить через `api.admin_prefix`.
 Если токен уже задан в `custom/config/template-registry.php`, модуль покажет текущее значение.
 
@@ -312,6 +507,7 @@ ClientSettings не является обязательным.
 - сигнатуры и пути PageBuilder (`pagebuilder.*`)
 - таблицы для lookup ресурсов (`resources_table`, `tv_values_table`)
 - настройки API (`api.enabled`, `api.prefix`, `api.middleware`, `api.require_manager`, `api.access_token`, `api.admin_prefix`)
+- настройки write API (`api.write_enabled`, `api.write_access_token`, `api.regenerate_after_write`)
 
 ## API endpoints
 
@@ -325,6 +521,21 @@ ClientSettings не является обязательным.
 - `GET /api/template-registry/resource-context`
 - `GET /api/template-registry/pagebuilder-configs`
 - `GET /api/template-registry/pagebuilder-configs/{name}`
+- `POST /api/template-registry/templates`
+- `PATCH /api/template-registry/templates/{templateId}`
+- `DELETE /api/template-registry/templates/{templateId}`
+- `POST /api/template-registry/tvs`
+- `PATCH /api/template-registry/tvs/{tvId}`
+- `DELETE /api/template-registry/tvs/{tvId}`
+- `POST /api/template-registry/resources`
+- `PATCH /api/template-registry/resources/{resourceId}`
+- `DELETE /api/template-registry/resources/{resourceId}`
+- `PUT /api/template-registry/resources/{resourceId}/restore`
+- `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}`
+- `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
+- `PUT /api/template-registry/resources/{resourceId}/template`
+- `PUT /api/template-registry/resources/{resourceId}/published`
+- `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}`
 
 ### PageBuilder configs API
 
@@ -333,6 +544,76 @@ ClientSettings не является обязательным.
 - `GET /api/template-registry/pagebuilder-configs` возвращает список файлов конфигурации, их тип (`block|container|groups`), валидность и полный распарсенный массив `config`.
 - `GET /api/template-registry/pagebuilder-configs/{name}` возвращает один конфиг по имени файла без `.php` / `.php.sample`.
 - Если директория `assets/plugins/pagebuilder/config` отсутствует, API возвращает валидный ответ с `exists=false` и пустым списком.
+
+### Write API
+
+Write API выключен по умолчанию.
+
+- Для включения выставьте `api.write_enabled=true`.
+- Для token-доступа можно передавать `X-Template-Registry-Write-Token`.
+- Если `write_access_token` совпадает с `access_token`, для write-запросов достаточно любого одного из заголовков: `X-Template-Registry-Write-Token` или `X-Template-Registry-Token`.
+- Если `write_access_token` пустой, запись разрешена только из активной manager session.
+- После успешной write-операции пакет по умолчанию регенерирует registry files (`api.regenerate_after_write=true`).
+
+Примеры payload:
+
+```json
+{
+  "name": "Landing Page",
+  "alias": "landing-page",
+  "controller": "EvolutionCMS\\Main\\Controllers\\LandingPageController",
+  "view": "landing-page"
+}
+```
+
+```json
+{
+  "name": "hero_title",
+  "caption": "Hero title",
+  "type": "text",
+  "default_text": ""
+}
+```
+
+```json
+{
+  "pagetitle": "About us",
+  "alias": "about",
+  "template_id": 12,
+  "parent": 0,
+  "published": true,
+  "tv_values": {
+    "15": "Hero title from API"
+  }
+}
+```
+
+When a resource is created under a parent (`parent > 0`), write API automatically marks that parent as `isfolder=1` so the child is visible in Evolution tree.
+
+```json
+{
+  "published": true
+}
+```
+
+```json
+{
+  "caption": "Updated image",
+  "description": "Updated via API"
+}
+```
+
+```json
+{
+  "pagetitle": "Updated page title",
+  "template_id": 1,
+  "tv_values": {
+    "15": "Updated value"
+  }
+}
+```
+
+`PUT /resources/{resourceId}/tv-values/{tvId}` now requires the TV to be attached to the resource's current template. Otherwise API returns `422`.
 
 ## Совместимость
 

@@ -3,16 +3,49 @@
 use Illuminate\Support\Facades\Route;
 use WrkAndreev\EvocmsTemplateRegistry\Http\Controllers\TemplateRegistryAccessModuleController;
 use WrkAndreev\EvocmsTemplateRegistry\Http\Controllers\TemplateRegistryApiController;
+use WrkAndreev\EvocmsTemplateRegistry\Http\Controllers\TemplateRegistryWriteApiController;
 use WrkAndreev\EvocmsTemplateRegistry\Middleware\TemplateRegistryApiAccess;
+use WrkAndreev\EvocmsTemplateRegistry\Middleware\TemplateRegistryApiWriteAccess;
 use WrkAndreev\EvocmsTemplateRegistry\Middleware\TemplateRegistryManagerAccess;
 
 $apiConfig = (array) config('template-registry.api', []);
 $apiPrefix = trim((string) ($apiConfig['prefix'] ?? 'api/template-registry'), '/');
-$apiMiddleware = $apiConfig['middleware'] ?? ['web'];
+$apiMiddleware = $apiConfig['middleware'] ?? ['global'];
 if (!is_array($apiMiddleware)) {
     $apiMiddleware = [$apiMiddleware];
 }
-$apiMiddleware[] = TemplateRegistryApiAccess::class;
+
+$globalMiddleware = (array) config('app.middleware.global', []);
+$mgrMiddleware = (array) config('app.middleware.mgr', []);
+
+$apiMiddleware = array_values(array_filter(array_map(static function ($middleware) {
+    if (!is_string($middleware) || trim($middleware) === '') {
+        return null;
+    }
+
+    if ($middleware === 'web') {
+        return 'global';
+    }
+
+    return $middleware;
+}, $apiMiddleware)));
+
+$expandedApiMiddleware = [];
+foreach ($apiMiddleware as $middleware) {
+    if ($middleware === 'global') {
+        $expandedApiMiddleware = array_merge($expandedApiMiddleware, $globalMiddleware);
+        continue;
+    }
+
+    if ($middleware === 'mgr') {
+        $expandedApiMiddleware = array_merge($expandedApiMiddleware, $mgrMiddleware);
+        continue;
+    }
+
+    $expandedApiMiddleware[] = $middleware;
+}
+
+$apiMiddleware = array_values(array_unique(array_merge($expandedApiMiddleware, [TemplateRegistryApiAccess::class])));
 
 Route::prefix($apiPrefix)
     ->middleware($apiMiddleware)
@@ -22,6 +55,8 @@ Route::prefix($apiPrefix)
         Route::get('/templates/{id}', [TemplateRegistryApiController::class, 'templateById'])->where('id', '[0-9]+');
         Route::get('/tvs', [TemplateRegistryApiController::class, 'tvCatalog']);
         Route::get('/resources', [TemplateRegistryApiController::class, 'resources']);
+        Route::get('/resources/{id}', [TemplateRegistryApiController::class, 'resourceById'])->where('id', '[0-9]+');
+        Route::get('/resources/{id}/children', [TemplateRegistryApiController::class, 'resourceChildren'])->where('id', '[0-9]+');
         Route::get('/stats', [TemplateRegistryApiController::class, 'stats']);
         Route::get('/resource-resolve', [TemplateRegistryApiController::class, 'resourceResolve']);
         Route::get('/resource-context', [TemplateRegistryApiController::class, 'resourceContext']);
@@ -29,10 +64,33 @@ Route::prefix($apiPrefix)
         Route::get('/pagebuilder-configs/{name}', [TemplateRegistryApiController::class, 'pageBuilderConfigByName']);
     });
 
+$writeMiddleware = $apiMiddleware;
+$writeMiddleware[] = TemplateRegistryApiWriteAccess::class;
+
+Route::prefix($apiPrefix)
+    ->middleware($writeMiddleware)
+    ->group(function (): void {
+        Route::post('/templates', [TemplateRegistryWriteApiController::class, 'createTemplate']);
+        Route::patch('/templates/{templateId}', [TemplateRegistryWriteApiController::class, 'updateTemplate'])->where('templateId', '[0-9]+');
+        Route::delete('/templates/{templateId}', [TemplateRegistryWriteApiController::class, 'deleteTemplate'])->where('templateId', '[0-9]+');
+        Route::post('/tvs', [TemplateRegistryWriteApiController::class, 'createTv']);
+        Route::patch('/tvs/{tvId}', [TemplateRegistryWriteApiController::class, 'updateTv'])->where('tvId', '[0-9]+');
+        Route::delete('/tvs/{tvId}', [TemplateRegistryWriteApiController::class, 'deleteTv'])->where('tvId', '[0-9]+');
+        Route::post('/resources', [TemplateRegistryWriteApiController::class, 'createResource']);
+        Route::patch('/resources/{resourceId}', [TemplateRegistryWriteApiController::class, 'updateResource'])->where('resourceId', '[0-9]+');
+        Route::delete('/resources/{resourceId}', [TemplateRegistryWriteApiController::class, 'deleteResource'])->where('resourceId', '[0-9]+');
+        Route::put('/resources/{resourceId}/restore', [TemplateRegistryWriteApiController::class, 'restoreResource'])->where('resourceId', '[0-9]+');
+        Route::put('/templates/{templateId}/tvs/{tvId}', [TemplateRegistryWriteApiController::class, 'attachTvToTemplate'])->where(['templateId' => '[0-9]+', 'tvId' => '[0-9]+']);
+        Route::delete('/templates/{templateId}/tvs/{tvId}', [TemplateRegistryWriteApiController::class, 'detachTvFromTemplate'])->where(['templateId' => '[0-9]+', 'tvId' => '[0-9]+']);
+        Route::put('/resources/{resourceId}/template', [TemplateRegistryWriteApiController::class, 'setResourceTemplate'])->where('resourceId', '[0-9]+');
+        Route::put('/resources/{resourceId}/published', [TemplateRegistryWriteApiController::class, 'setResourcePublished'])->where('resourceId', '[0-9]+');
+        Route::put('/resources/{resourceId}/tv-values/{tvId}', [TemplateRegistryWriteApiController::class, 'setResourceTvValue'])->where(['resourceId' => '[0-9]+', 'tvId' => '[0-9]+']);
+    });
+
 $adminPrefix = trim((string) ($apiConfig['admin_prefix'] ?? 'template-registry-admin'), '/');
 
 Route::prefix($adminPrefix)
-    ->middleware(['web', TemplateRegistryManagerAccess::class])
+    ->middleware(array_values(array_unique(array_merge($mgrMiddleware, [TemplateRegistryManagerAccess::class]))))
     ->group(function (): void {
         Route::get('/access', [TemplateRegistryAccessModuleController::class, 'index']);
         Route::post('/access/settings', [TemplateRegistryAccessModuleController::class, 'saveSettings']);
