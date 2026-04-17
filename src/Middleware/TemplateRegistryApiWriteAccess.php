@@ -30,8 +30,21 @@ class TemplateRegistryApiWriteAccess
         }
 
         $writeToken = trim((string) ($api['write_access_token'] ?? ''));
+        $accessToken = trim((string) ($api['access_token'] ?? ''));
         $requestToken = trim((string) $request->header('X-Template-Registry-Write-Token', ''));
+        $requestAccessToken = trim((string) $request->header('X-Template-Registry-Token', ''));
+
         if ($writeToken !== '' && $requestToken !== '' && hash_equals($writeToken, $requestToken)) {
+            return $next($request);
+        }
+
+        if (
+            $writeToken !== ''
+            && $accessToken !== ''
+            && hash_equals($writeToken, $accessToken)
+            && $requestAccessToken !== ''
+            && hash_equals($accessToken, $requestAccessToken)
+        ) {
             return $next($request);
         }
 

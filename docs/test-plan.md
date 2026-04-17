@@ -116,6 +116,7 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Call a write endpoint without manager session and without token: verify `403`.
 - Call the same endpoint with invalid `X-Template-Registry-Write-Token`: verify `403`.
 - Call with valid `X-Template-Registry-Write-Token`: verify request is allowed.
+- If `write_access_token` equals `access_token`, call the same write endpoint with only `X-Template-Registry-Token`: verify request is allowed.
 - Disable write API and verify all write endpoints return `403`.
 
 12. Write API operations

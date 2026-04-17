@@ -550,7 +550,8 @@ ClientSettings не является обязательным.
 Write API выключен по умолчанию.
 
 - Для включения выставьте `api.write_enabled=true`.
-- Для token-доступа передавайте заголовок `X-Template-Registry-Write-Token`.
+- Для token-доступа можно передавать `X-Template-Registry-Write-Token`.
+- Если `write_access_token` совпадает с `access_token`, для write-запросов достаточно любого одного из заголовков: `X-Template-Registry-Write-Token` или `X-Template-Registry-Token`.
 - Если `write_access_token` пустой, запись разрешена только из активной manager session.
 - После успешной write-операции пакет по умолчанию регенерирует registry files (`api.regenerate_after_write=true`).
 
