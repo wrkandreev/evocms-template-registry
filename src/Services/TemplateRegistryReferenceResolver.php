@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WrkAndreev\EvocmsTemplateRegistry\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 class TemplateRegistryReferenceResolver
@@ -114,9 +115,20 @@ class TemplateRegistryReferenceResolver
             throw new RuntimeException('Required table config missing for ' . $configKey . '.');
         }
 
+        if (Schema::hasTable($base)) {
+            return $base;
+        }
+
         $defaultConnection = (string) \config('database.default');
         $prefix = (string) \config("database.connections.{$defaultConnection}.prefix", '');
 
-        return $prefix !== '' ? $prefix . $base : $base;
+        if ($prefix !== '') {
+            $prefixed = $prefix . $base;
+            if (Schema::hasTable($prefixed)) {
+                return $prefixed;
+            }
+        }
+
+        return $base;
     }
 }
