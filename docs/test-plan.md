@@ -140,7 +140,15 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Call `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}` and verify link row is removed.
 - With `api.regenerate_after_write=true`, verify generated registry files are refreshed after successful writes.
 
-13. Auto-regenerate plugin
+13. Migration engine
+
+- Run `php core/artisan template-registry:migrate --dry-run` and verify pending migrations are shown as `would_apply` without DB changes.
+- Apply one migration with `php core/artisan template-registry:migrate` and verify status becomes `applied`.
+- Re-run the same migration and verify status becomes `skipped`.
+- Change migration file contents after apply and verify command fails with checksum mismatch.
+- Verify CLI failure output contains machine-readable code in square brackets.
+
+14. Auto-regenerate plugin
 
 - Run `php core/artisan template-registry:plugin:install` and verify plugin is created as disabled.
 - Enable plugin (from module page or `template-registry:plugin:install --enabled`).

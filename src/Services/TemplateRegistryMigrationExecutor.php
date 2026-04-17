@@ -49,7 +49,7 @@ class TemplateRegistryMigrationExecutor
     }
 
     /** @return array<int,array{name:string,status:string}> */
-    public function migrate(?string $only = null): array
+    public function migrate(?string $only = null, bool $dryRun = false): array
     {
         $applied = $this->stateRepository->allApplied();
         $config = $this->config;
@@ -73,6 +73,11 @@ class TemplateRegistryMigrationExecutor
                 continue;
             }
 
+            if ($dryRun) {
+                $executed[] = ['name' => $name, 'status' => 'would_apply'];
+                continue;
+            }
+
             DB::transaction(function () use ($migration, $writeService, $name): void {
                 foreach ((array) ($migration['operations'] ?? []) as $operation) {
                     if (!is_array($operation)) {
@@ -87,7 +92,7 @@ class TemplateRegistryMigrationExecutor
             $executed[] = ['name' => $name, 'status' => 'applied'];
         }
 
-        if (array_filter($executed, static fn(array $row): bool => ($row['status'] ?? '') === 'applied') !== []) {
+        if (!$dryRun && array_filter($executed, static fn(array $row): bool => ($row['status'] ?? '') === 'applied') !== []) {
             $this->regenerateRegistry();
         }
 
@@ -143,6 +148,36 @@ class TemplateRegistryMigrationExecutor
                 return;
             case 'restore_resource':
                 $writeService->restoreResource($this->resolver->resourceId($operation['resource'] ?? [], true));
+                return;
+            case 'update_template':
+                $writeService->updateTemplate(
+                    $this->resolver->templateId($operation['template'] ?? []),
+                    (array) ($operation['data'] ?? [])
+                );
+                return;
+            case 'delete_template':
+                $writeService->deleteTemplate($this->resolver->templateId($operation['template'] ?? []));
+                return;
+            case 'update_tv':
+                $writeService->updateTv(
+                    $this->resolver->tvId($operation['tv'] ?? []),
+                    (array) ($operation['data'] ?? [])
+                );
+                return;
+            case 'delete_tv':
+                $writeService->deleteTv($this->resolver->tvId($operation['tv'] ?? []));
+                return;
+            case 'update_resource':
+                $writeService->updateResource(
+                    $this->resolver->resourceId($operation['resource'] ?? [], true),
+                    $this->normalizeResourceData((array) ($operation['data'] ?? []))
+                );
+                return;
+            case 'set_resource_template':
+                $writeService->setResourceTemplate(
+                    $this->resolver->resourceId($operation['resource'] ?? [], true),
+                    $this->resolver->templateId($operation['template'] ?? [])
+                );
                 return;
         }
 

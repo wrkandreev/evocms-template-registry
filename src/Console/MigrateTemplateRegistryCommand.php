@@ -8,9 +8,11 @@ use Illuminate\Console\Command;
 use RuntimeException;
 use WrkAndreev\EvocmsTemplateRegistry\Services\TemplateRegistryMigrationExecutor;
 
+use WrkAndreev\EvocmsTemplateRegistry\Support\TemplateRegistryErrorMapper;
+
 class MigrateTemplateRegistryCommand extends Command
 {
-    protected $signature = 'template-registry:migrate {name? : One migration name to apply}';
+    protected $signature = 'template-registry:migrate {name? : One migration name to apply} {--dry-run : Show which migrations would be applied without changing DB}';
 
     protected $description = 'Apply template registry content migrations';
 
@@ -18,9 +20,10 @@ class MigrateTemplateRegistryCommand extends Command
     {
         try {
             $rows = (new TemplateRegistryMigrationExecutor((array) config('template-registry', [])))
-                ->migrate((string) ($this->argument('name') ?? ''));
+                ->migrate((string) ($this->argument('name') ?? ''), (bool) $this->option('dry-run'));
         } catch (RuntimeException $e) {
-            $this->error($e->getMessage());
+            $mapped = (new TemplateRegistryErrorMapper())->map($e->getMessage());
+            $this->error('[' . $mapped['code'] . '] ' . $e->getMessage());
             return self::FAILURE;
         }
 

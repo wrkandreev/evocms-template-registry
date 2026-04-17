@@ -6,6 +6,7 @@ namespace WrkAndreev\EvocmsTemplateRegistry\Http\Controllers;
 
 use Illuminate\Http\Request;
 use RuntimeException;
+use WrkAndreev\EvocmsTemplateRegistry\Support\TemplateRegistryErrorMapper;
 use WrkAndreev\EvocmsTemplateRegistry\Services\TemplateRegistryWriteService;
 
 class TemplateRegistryWriteApiController
@@ -121,34 +122,16 @@ class TemplateRegistryWriteApiController
             $service = new TemplateRegistryWriteService((array) \config('template-registry', []));
             $result = $callback($service);
         } catch (RuntimeException $e) {
-            $status = $this->errorStatus($e->getMessage());
+            $mapped = (new TemplateRegistryErrorMapper())->map($e->getMessage());
             return \response()->json([
                 'ok' => false,
+                'code' => $mapped['code'],
                 'message' => $e->getMessage(),
-            ], $status);
+            ], $mapped['status']);
         }
 
         return \response()->json([
             'ok' => true,
         ] + $result, $successStatus);
-    }
-
-    private function errorStatus(string $message): int
-    {
-        $message = strtolower($message);
-
-        foreach (['required', 'invalid', 'must', 'already exists', 'empty', 'not attached', 'used by', 'no '] as $needle) {
-            if (str_contains($message, $needle)) {
-                return 422;
-            }
-        }
-
-        foreach (['not found', 'missing'] as $needle) {
-            if (str_contains($message, $needle)) {
-                return 404;
-            }
-        }
-
-        return 500;
     }
 }

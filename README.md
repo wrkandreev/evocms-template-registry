@@ -97,6 +97,12 @@ php core/artisan template-registry:migrate:make CreateT1Assets
 php core/artisan template-registry:migrate
 ```
 
+Dry run без изменений в БД:
+
+```bash
+php core/artisan template-registry:migrate --dry-run
+```
+
 Посмотреть статус content migrations:
 
 ```bash
@@ -220,10 +226,16 @@ return [
 Поддерживаемые операции v1:
 
 - `upsert_template`
+- `update_template`
+- `delete_template`
 - `upsert_tv`
+- `update_tv`
+- `delete_tv`
 - `attach_tv_to_template`
 - `detach_tv_from_template`
 - `upsert_resource`
+- `update_resource`
+- `set_resource_template`
 - `set_resource_published`
 - `set_resource_tv_value`
 - `delete_resource`
@@ -233,6 +245,24 @@ Migration engine идемпотентен на уровне файла:
 
 - уже применённый файл с тем же checksum будет пропущен
 - если checksum applied migration изменился, команда завершится с ошибкой
+
+### Error codes
+
+Write API errors now return machine-readable `code` together with `message`, for example:
+
+```json
+{
+  "ok": false,
+  "code": "template_not_found",
+  "message": "Template not found."
+}
+```
+
+Migration command failures print the same code in CLI output, for example:
+
+```text
+[migration_checksum_changed] Migration checksum changed after apply: ...
+```
 
 ## API
 

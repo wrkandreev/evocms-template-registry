@@ -65,6 +65,12 @@ Apply content migrations:
 php core/artisan template-registry:migrate
 ```
 
+Dry-run content migrations:
+
+```bash
+php core/artisan template-registry:migrate --dry-run
+```
+
 Show content migration status:
 
 ```bash
