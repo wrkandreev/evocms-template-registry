@@ -9,7 +9,7 @@ class TemplateRegistryPathResolver
     /** @param array<string,mixed> $config */
     public function migrationsPath(array $config): string
     {
-        $path = trim((string) ($config['migrations']['path'] ?? 'core/custom/packages/Main/template-registry/migrations'));
+        $path = trim((string) ($config['migrations']['path'] ?? 'core/custom/template-registry/migrations'));
         return $this->toAbsolutePath($path);
     }
 

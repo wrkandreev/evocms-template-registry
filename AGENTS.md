@@ -35,6 +35,13 @@ Optional config publish:
 php artisan vendor:publish --provider="WrkAndreev\EvocmsTemplateRegistry\EvocmsTemplateRegistryServiceProvider" --tag="evocms-template-registry-config"
 ```
 
+Fresh Evolution CMS 3 CE install note:
+
+- if the package was installed from `core/composer.json` and `php artisan list` does not show `template-registry:*`, create `core/custom/config/app/providers/EvocmsTemplateRegistryServiceProvider.php`
+- file contents must be `return WrkAndreev\EvocmsTemplateRegistry\EvocmsTemplateRegistryServiceProvider::class;`
+- then run `vendor:publish` again and only after that run `template-registry:routes:install`, `template-registry:module:install`, `template-registry:plugin:install`
+- reason: on this Evo setup `package:discover` may scan `core/custom/composer.json` rather than registering packages added only to `core/composer.json`
+
 Published config path:
 
 - `core/custom/config/template-registry.php`
@@ -148,7 +155,13 @@ Resolution rules:
 
 Content migration path by default:
 
-- `core/custom/packages/Main/template-registry/migrations`
+- `core/custom/template-registry/migrations`
+
+Decision:
+
+- migration engine stays in the package dependency
+- migration files are project-level and must live under `core/custom`, not in `vendor` and not inside project package `Main`
+- default location is `core/custom/template-registry/migrations`
 
 Applied migrations state table:
 

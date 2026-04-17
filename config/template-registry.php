@@ -71,7 +71,7 @@ return [
     ],
 
     'migrations' => [
-        'path' => 'core/custom/packages/Main/template-registry/migrations',
+        'path' => 'core/custom/template-registry/migrations',
         'table' => 'template_registry_migrations',
     ],
 

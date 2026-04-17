@@ -60,6 +60,8 @@ php core/artisan template-registry:routes:install
 - Для работы web API на реальном сайте пакет должен лежать в `core/vendor` как обычные файлы, не как symlink.
 - Если пакет установлен через `path` repository для тестов, используйте `"options": {"symlink": false}`.
 - На некоторых окружениях symlink-вариант может ломать `core/custom/routes.php` и приводить к `500` в web-runtime.
+- На свежих установках Evolution CMS 3 CE `php artisan package:discover` может не зарегистрировать service provider пакета, если пакет добавлен в `core/composer.json`, потому что discovery в этом окружении сканирует `core/custom/composer.json` и `vendor/*/composer.json` через него.
+- Если после установки нет команд `template-registry:*`, создайте файл `core/custom/config/app/providers/EvocmsTemplateRegistryServiceProvider.php` со строкой `return WrkAndreev\EvocmsTemplateRegistry\EvocmsTemplateRegistryServiceProvider::class;`, затем повторите `vendor:publish` и команды `template-registry:*`.
 
 Создать/обновить плагин автогенерации (по умолчанию создается выключенным):
 
@@ -150,11 +152,21 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 Рекомендуемый порядок для нового инстанса:
 
 1. Установить пакет через Composer так, чтобы он оказался в `core/vendor` без symlink.
-2. Опубликовать конфиг при необходимости.
-3. Выполнить `php core/artisan template-registry:routes:install`.
-4. Выполнить `php core/artisan template-registry:module:install`.
-5. При необходимости включить write API в `custom/config/template-registry.php` или через manager module.
-6. Проверить `GET /api/template-registry` и `GET /api/template-registry/templates`.
+2. Проверить, что появились команды `template-registry:*` в `php artisan list`.
+3. Если команд нет, создать `core/custom/config/app/providers/EvocmsTemplateRegistryServiceProvider.php` с `return WrkAndreev\EvocmsTemplateRegistry\EvocmsTemplateRegistryServiceProvider::class;`.
+4. Выполнить `php artisan vendor:publish --provider="WrkAndreev\EvocmsTemplateRegistry\EvocmsTemplateRegistryServiceProvider" --tag="evocms-template-registry-config"`.
+5. Выполнить `php core/artisan template-registry:routes:install`.
+6. Выполнить `php core/artisan template-registry:module:install`.
+7. При необходимости выполнить `php core/artisan template-registry:plugin:install` или `php core/artisan template-registry:plugin:install --enabled`.
+8. При необходимости включить write API в `custom/config/template-registry.php` или через manager module.
+9. Проверить `GET /api/template-registry` и `GET /api/template-registry/templates`.
+
+Решение по content migrations:
+
+- migration engine живет в пакете как dependency
+- сами migration files живут в проекте, а не в пакете и не в `vendor`
+- default path: `core/custom/template-registry/migrations`
+- это project-level директория, чтобы migrations можно было хранить в git проекта независимо от способа установки пакета
 
 ## Content Migrations
 
@@ -162,7 +174,7 @@ php core/artisan template-registry:generate --output=core/custom/packages/Main/g
 
 Путь по умолчанию:
 
-- `core/custom/packages/Main/template-registry/migrations`
+- `core/custom/template-registry/migrations`
 
 Состояние applied migrations хранится в таблице:
 
