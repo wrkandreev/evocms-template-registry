@@ -55,6 +55,12 @@ php core/artisan template-registry:module:install
 php core/artisan template-registry:routes:install
 ```
 
+Важно:
+
+- Для работы web API на реальном сайте пакет должен лежать в `core/vendor` как обычные файлы, не как symlink.
+- Если пакет установлен через `path` repository для тестов, используйте `"options": {"symlink": false}`.
+- На некоторых окружениях symlink-вариант может ломать `core/custom/routes.php` и приводить к `500` в web-runtime.
+
 Создать/обновить плагин автогенерации (по умолчанию создается выключенным):
 
 ```bash
@@ -134,6 +140,15 @@ php core/artisan template-registry:generate
 ```bash
 php core/artisan template-registry:generate --output=core/custom/packages/Main/generated/registry --format=all --strict
 ```
+
+Рекомендуемый порядок для нового инстанса:
+
+1. Установить пакет через Composer так, чтобы он оказался в `core/vendor` без symlink.
+2. Опубликовать конфиг при необходимости.
+3. Выполнить `php core/artisan template-registry:routes:install`.
+4. Выполнить `php core/artisan template-registry:module:install`.
+5. При необходимости включить write API в `custom/config/template-registry.php` или через manager module.
+6. Проверить `GET /api/template-registry` и `GET /api/template-registry/templates`.
 
 ## Content Migrations
 
