@@ -70,6 +70,11 @@ return [
         'customtv_file' => 'assets/tvs/pagebuilder/pagebuilder.customtv.php',
     ],
 
+    'migrations' => [
+        'path' => 'core/custom/packages/Main/template-registry/migrations',
+        'table' => 'template_registry_migrations',
+    ],
+
     'api' => [
         'enabled' => true,
         'prefix' => 'api/template-registry',

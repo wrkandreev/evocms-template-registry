@@ -194,7 +194,7 @@ class ResourceContextResolver
             return null;
         }
 
-        foreach ($this->listResources($payload, 500, $includeDeleted) as $resource) {
+        foreach ($this->listResources($payload, 1000000, $includeDeleted) as $resource) {
             if ((int) ($resource['id'] ?? 0) === $resourceId) {
                 return $resource;
             }

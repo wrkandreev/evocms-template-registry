@@ -53,6 +53,24 @@ Options:
 - `--format=json|md|php|all`
 - `--strict` fail on missing controller/view
 
+Create content migration file:
+
+```bash
+php core/artisan template-registry:migrate:make CreateT1Assets
+```
+
+Apply content migrations:
+
+```bash
+php core/artisan template-registry:migrate
+```
+
+Show content migration status:
+
+```bash
+php core/artisan template-registry:migrate:status
+```
+
 Create/update manager module (shown in CMS Modules menu):
 
 ```bash
@@ -121,6 +139,14 @@ Resolution rules:
 - `--output` option has highest priority
 - then `output` from config
 - if both empty, first existing parent path from `output_fallbacks` is used
+
+Content migration path by default:
+
+- `core/custom/packages/Main/template-registry/migrations`
+
+Applied migrations state table:
+
+- `template_registry_migrations`
 
 Generated payload files:
 

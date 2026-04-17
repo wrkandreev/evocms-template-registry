@@ -79,6 +79,24 @@ php core/artisan template-registry:module:uninstall
 php core/artisan template-registry:routes:uninstall
 ```
 
+Создать migration-файл для переносимых content-изменений:
+
+```bash
+php core/artisan template-registry:migrate:make CreateT1Assets
+```
+
+Применить content migrations:
+
+```bash
+php core/artisan template-registry:migrate
+```
+
+Посмотреть статус content migrations:
+
+```bash
+php core/artisan template-registry:migrate:status
+```
+
 ## Использование
 
 ```bash
@@ -116,6 +134,90 @@ php core/artisan template-registry:generate
 ```bash
 php core/artisan template-registry:generate --output=core/custom/packages/Main/generated/registry --format=all --strict
 ```
+
+## Content Migrations
+
+Для переносимых изменений между инстансами используйте declarative migrations, а не raw DB ids.
+
+Путь по умолчанию:
+
+- `core/custom/packages/Main/template-registry/migrations`
+
+Состояние applied migrations хранится в таблице:
+
+- `template_registry_migrations`
+
+Рекомендуемые стабильные ключи:
+
+- templates: `alias`
+- TVs: `name`
+- resources: `path` или `alias + parent`
+
+Пример migration-файла:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+return [
+    'name' => '2026_04_13_130000_create_t1_assets',
+    'description' => 'Create template, TVs and one resource',
+    'operations' => [
+        [
+            'op' => 'upsert_template',
+            'match' => ['alias' => 't1'],
+            'data' => [
+                'name' => 'T1',
+                'alias' => 't1',
+            ],
+        ],
+        [
+            'op' => 'upsert_tv',
+            'match' => ['name' => 'tv_t1_img'],
+            'data' => [
+                'name' => 'tv_t1_img',
+                'caption' => 'TV T1 image',
+                'type' => 'image',
+            ],
+        ],
+        [
+            'op' => 'attach_tv_to_template',
+            'template' => ['alias' => 't1'],
+            'tv' => ['name' => 'tv_t1_img'],
+            'rank' => 0,
+        ],
+        [
+            'op' => 'upsert_resource',
+            'match' => ['alias' => 'resurs-1', 'parent' => ['id' => 0]],
+            'data' => [
+                'pagetitle' => 'Ресурс 1',
+                'alias' => 'resurs-1',
+                'template' => ['alias' => 't1'],
+                'parent' => 0,
+                'published' => true,
+            ],
+        ],
+    ],
+];
+```
+
+Поддерживаемые операции v1:
+
+- `upsert_template`
+- `upsert_tv`
+- `attach_tv_to_template`
+- `detach_tv_from_template`
+- `upsert_resource`
+- `set_resource_published`
+- `set_resource_tv_value`
+- `delete_resource`
+- `restore_resource`
+
+Migration engine идемпотентен на уровне файла:
+
+- уже применённый файл с тем же checksum будет пропущен
+- если checksum applied migration изменился, команда завершится с ошибкой
 
 ## API
 

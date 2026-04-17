@@ -9,6 +9,9 @@ use WrkAndreev\EvocmsTemplateRegistry\Console\GenerateTemplateRegistryCommand;
 use WrkAndreev\EvocmsTemplateRegistry\Console\InstallTemplateRegistryModuleCommand;
 use WrkAndreev\EvocmsTemplateRegistry\Console\InstallTemplateRegistryPluginCommand;
 use WrkAndreev\EvocmsTemplateRegistry\Console\InstallTemplateRegistryRoutesCommand;
+use WrkAndreev\EvocmsTemplateRegistry\Console\MakeTemplateRegistryMigrationCommand;
+use WrkAndreev\EvocmsTemplateRegistry\Console\MigrateTemplateRegistryCommand;
+use WrkAndreev\EvocmsTemplateRegistry\Console\TemplateRegistryMigrationStatusCommand;
 use WrkAndreev\EvocmsTemplateRegistry\Console\UninstallTemplateRegistryModuleCommand;
 use WrkAndreev\EvocmsTemplateRegistry\Console\UninstallTemplateRegistryPluginCommand;
 use WrkAndreev\EvocmsTemplateRegistry\Console\UninstallTemplateRegistryRoutesCommand;
@@ -41,6 +44,9 @@ class EvocmsTemplateRegistryServiceProvider extends ServiceProvider
                 UninstallTemplateRegistryPluginCommand::class,
                 InstallTemplateRegistryRoutesCommand::class,
                 UninstallTemplateRegistryRoutesCommand::class,
+                MakeTemplateRegistryMigrationCommand::class,
+                MigrateTemplateRegistryCommand::class,
+                TemplateRegistryMigrationStatusCommand::class,
             ]);
 
             if (method_exists($this, 'publishes')) {
