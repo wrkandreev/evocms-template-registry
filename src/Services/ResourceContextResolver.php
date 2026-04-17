@@ -141,6 +141,90 @@ class ResourceContextResolver
             }
         }
 
+        return $this->mapResourceRows($rows, $templatesById);
+    }
+
+    /** @param array<string,mixed> $payload @return array<string,mixed>|null */
+    public function resourceById(array $payload, int $resourceId, bool $includeDeleted = false): ?array
+    {
+        if ($resourceId <= 0) {
+            return null;
+        }
+
+        $contentTable = $this->resolveTableName((string) $this->cfg('resources_table', 'site_content'));
+        if ($contentTable === null) {
+            throw new RuntimeException('Required resource table not found (site_content).');
+        }
+
+        $columns = $this->resourceListColumns($contentTable);
+        $query = DB::table($contentTable)
+            ->select($columns)
+            ->where('id', $resourceId);
+
+        if (!$includeDeleted && Schema::hasColumn($contentTable, 'deleted')) {
+            $query->where('deleted', 0);
+        }
+
+        $row = $query->first();
+        if ($row === null) {
+            return null;
+        }
+
+        $templatesById = $this->templatesById($payload);
+        $result = $this->mapResourceRows([$row], $templatesById);
+
+        return $result[0] ?? null;
+    }
+
+    /** @param array<string,mixed> $payload @return array<int,array<string,mixed>> */
+    public function childResources(array $payload, int $parentId, int $limit = 100, bool $includeDeleted = false): array
+    {
+        if ($parentId <= 0) {
+            return [];
+        }
+
+        $contentTable = $this->resolveTableName((string) $this->cfg('resources_table', 'site_content'));
+        if ($contentTable === null) {
+            throw new RuntimeException('Required resource table not found (site_content).');
+        }
+
+        $columns = $this->resourceListColumns($contentTable);
+        $query = DB::table($contentTable)
+            ->select($columns)
+            ->where('parent', $parentId)
+            ->orderBy('id')
+            ->limit(max(1, $limit));
+
+        if (!$includeDeleted && Schema::hasColumn($contentTable, 'deleted')) {
+            $query->where('deleted', 0);
+        }
+
+        $rows = $query->get();
+
+        return $this->mapResourceRows($rows, $this->templatesById($payload));
+    }
+
+    /** @param array<string,mixed> $payload @return array<int,array<string,mixed>> */
+    private function templatesById(array $payload): array
+    {
+        $templatesById = [];
+        foreach ((array) ($payload['templates'] ?? []) as $template) {
+            if (!is_array($template)) {
+                continue;
+            }
+
+            $templateId = (int) ($template['id'] ?? 0);
+            if ($templateId > 0) {
+                $templatesById[$templateId] = $template;
+            }
+        }
+
+        return $templatesById;
+    }
+
+    /** @param iterable<object> $rows @param array<int,array<string,mixed>> $templatesById @return array<int,array<string,mixed>> */
+    private function mapResourceRows(iterable $rows, array $templatesById): array
+    {
         $result = [];
         foreach ($rows as $row) {
             $templateId = (int) ($row->template ?? 0);
@@ -182,39 +266,6 @@ class ResourceContextResolver
                 'hidemenu' => isset($row->hidemenu) ? (bool) $row->hidemenu : null,
                 'alias_visible' => isset($row->alias_visible) ? (bool) $row->alias_visible : null,
             ];
-        }
-
-        return $result;
-    }
-
-    /** @param array<string,mixed> $payload @return array<string,mixed>|null */
-    public function resourceById(array $payload, int $resourceId, bool $includeDeleted = false): ?array
-    {
-        if ($resourceId <= 0) {
-            return null;
-        }
-
-        foreach ($this->listResources($payload, 1000000, $includeDeleted) as $resource) {
-            if ((int) ($resource['id'] ?? 0) === $resourceId) {
-                return $resource;
-            }
-        }
-
-        return null;
-    }
-
-    /** @param array<string,mixed> $payload @return array<int,array<string,mixed>> */
-    public function childResources(array $payload, int $parentId, int $limit = 100, bool $includeDeleted = false): array
-    {
-        if ($parentId <= 0) {
-            return [];
-        }
-
-        $result = [];
-        foreach ($this->listResources($payload, $limit, $includeDeleted) as $resource) {
-            if ((int) ($resource['parent'] ?? 0) === $parentId) {
-                $result[] = $resource;
-            }
         }
 
         return $result;

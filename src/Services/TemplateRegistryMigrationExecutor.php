@@ -155,12 +155,13 @@ class TemplateRegistryMigrationExecutor
         $match = (array) ($operation['match'] ?? []);
         $data = (array) ($operation['data'] ?? []);
 
-        try {
-            $id = $this->resolver->templateId($match);
+        $id = $this->resolver->findTemplateId($match);
+        if ($id !== null) {
             $writeService->updateTemplate($id, $data);
-        } catch (RuntimeException $e) {
-            $writeService->createTemplate($data);
+            return;
         }
+
+        $writeService->createTemplate($data);
     }
 
     /** @param array<string,mixed> $operation */
@@ -169,12 +170,13 @@ class TemplateRegistryMigrationExecutor
         $match = (array) ($operation['match'] ?? []);
         $data = (array) ($operation['data'] ?? []);
 
-        try {
-            $id = $this->resolver->tvId($match['name'] ?? $match);
+        $id = $this->resolver->findTvId($match['name'] ?? $match);
+        if ($id !== null) {
             $writeService->updateTv($id, $data);
-        } catch (RuntimeException $e) {
-            $writeService->createTv($data);
+            return;
         }
+
+        $writeService->createTv($data);
     }
 
     /** @param array<string,mixed> $operation */
@@ -183,12 +185,13 @@ class TemplateRegistryMigrationExecutor
         $match = (array) ($operation['match'] ?? []);
         $data = $this->normalizeResourceData((array) ($operation['data'] ?? []));
 
-        try {
-            $id = $this->resolver->resourceId($match, true);
+        $id = $this->resolver->findResourceId($match, true);
+        if ($id !== null) {
             $writeService->updateResource($id, $data);
-        } catch (RuntimeException $e) {
-            $writeService->createResource($data);
+            return;
         }
+
+        $writeService->createResource($data);
     }
 
     /** @param array<string,mixed> $data @return array<string,mixed> */

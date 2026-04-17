@@ -21,6 +21,17 @@ class TemplateRegistryReferenceResolver
     /** @param array<string,mixed>|int|string $reference */
     public function templateId(array|int|string $reference): int
     {
+        $id = $this->findTemplateId($reference);
+        if ($id !== null) {
+            return $id;
+        }
+
+        throw new RuntimeException('Template reference not found.');
+    }
+
+    /** @param array<string,mixed>|int|string $reference */
+    public function findTemplateId(array|int|string $reference): ?int
+    {
         if (is_int($reference) || ctype_digit((string) $reference)) {
             return (int) $reference;
         }
@@ -43,11 +54,22 @@ class TemplateRegistryReferenceResolver
             }
         }
 
-        throw new RuntimeException('Template reference not found.');
+        return null;
     }
 
     /** @param array<string,mixed>|int|string $reference */
     public function tvId(array|int|string $reference): int
+    {
+        $id = $this->findTvId($reference);
+        if ($id !== null) {
+            return $id;
+        }
+
+        throw new RuntimeException('TV reference not found.');
+    }
+
+    /** @param array<string,mixed>|int|string $reference */
+    public function findTvId(array|int|string $reference): ?int
     {
         if (is_int($reference) || ctype_digit((string) $reference)) {
             return (int) $reference;
@@ -64,11 +86,22 @@ class TemplateRegistryReferenceResolver
             return $id;
         }
 
-        throw new RuntimeException('TV reference not found.');
+        return null;
     }
 
     /** @param array<string,mixed>|int|string $reference */
     public function resourceId(array|int|string $reference, bool $includeDeleted = true): int
+    {
+        $id = $this->findResourceId($reference, $includeDeleted);
+        if ($id !== null) {
+            return $id;
+        }
+
+        throw new RuntimeException('Resource reference not found.');
+    }
+
+    /** @param array<string,mixed>|int|string $reference */
+    public function findResourceId(array|int|string $reference, bool $includeDeleted = true): ?int
     {
         if (is_int($reference) || ctype_digit((string) $reference)) {
             return (int) $reference;
@@ -105,7 +138,7 @@ class TemplateRegistryReferenceResolver
             }
         }
 
-        throw new RuntimeException('Resource reference not found.');
+        return null;
     }
 
     private function requireTable(string $configKey, string $default): string
