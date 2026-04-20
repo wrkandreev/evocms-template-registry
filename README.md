@@ -310,6 +310,7 @@ Migration command failures print the same code in CLI output, for example:
 - `GET /api/template-registry/stats` только статистика
 - `GET /api/template-registry/resource-resolve` быстрый резолв `resource_id` по URL или id
 - `GET /api/template-registry/resource-context` контекст ресурс/шаблон/TV по URL или id
+- `GET /api/template-registry/blang` конфигурация `bLang`, поля и связи с шаблонами
 - `GET /api/template-registry/pagebuilder-configs` список PageBuilder-конфигов
 - `GET /api/template-registry/pagebuilder-configs/{name}` один PageBuilder-конфиг по имени
 - `POST /api/template-registry/templates` создать шаблон
@@ -356,6 +357,7 @@ Migration command failures print the same code in CLI output, for example:
 
 - мета ресурса (`id`, `pagetitle`, `alias`, `uri`, `template_id`)
 - объект шаблона из реестра
+- секцию `blang` с языками, suffixes и bLang-полями шаблона ресурса
 - доступные TV для шаблона (`tvs_available`)
 - текущие значения TV для этого ресурса (`tv_values`)
 
@@ -386,6 +388,7 @@ Migration command failures print the same code in CLI output, for example:
 - `templates[]` с `controller`, `view`, `tv_refs`, `flags`
 - `tv_catalog[]` для дедуплицированного каталога TV
 - `client_settings` присутствует всегда (объект; данные модуля опциональны)
+- `blang` присутствует всегда (объект; данные модуля опциональны)
 - `system_features` показывает наличие связанных модулей/расширений
 - отдельный API endpoint доступен для удаленного чтения PageBuilder-конфигов
 - `stats` сводная статистика (`missing_*`, `unique_tvs` и т.д.)
@@ -394,12 +397,46 @@ Migration command failures print the same code in CLI output, for example:
 
 `client_settings` присутствует всегда, даже если модуль ClientSettings не установлен.
 
+`blang` также присутствует всегда. Если `bLang` не установлен или его таблицы недоступны, объект остается валидным с `exists=false` и пустыми коллекциями.
+
 ```json
 {
   "generated_at": "2026-03-13T10:00:00+00:00",
   "project": "example.local",
   "templates": [],
   "tv_catalog": [],
+  "blang": {
+    "exists": false,
+    "languages": [],
+    "default_language": "",
+    "suffixes": {},
+    "settings": {
+      "auto_fields": false,
+      "auto_url": false,
+      "client_settings_prefix": "",
+      "menu_controller_fields": [],
+      "content_controller_fields": [],
+      "default_to_new_tab": false,
+      "pb_show_btn": false,
+      "pb_is_te3": false,
+      "pb_config": "",
+      "translate": false,
+      "translate_provider": ""
+    },
+    "fields_catalog": [],
+    "template_links": [],
+    "stats": {
+      "settings_table_exists": false,
+      "fields_table_exists": false,
+      "template_links_table_exists": false,
+      "lexicon_table_exists": false,
+      "languages_total": 0,
+      "fields_total": 0,
+      "template_links_total": 0,
+      "templates_total": 0,
+      "lexicon_entries_total": 0
+    }
+  },
   "system_features": {
     "client_settings": {
       "installed": false,
@@ -442,6 +479,15 @@ Migration command failures print the same code in CLI output, for example:
         "config_dir_exists": false,
         "customtv_file_exists": false,
         "configs_count": 0
+      }
+    },
+    "blang": {
+      "installed": false,
+      "details": {
+        "module_path_exists": false,
+        "class_file_exists": false,
+        "plugin_file_exists": false,
+        "snippet_file_exists": false
       }
     }
   },
@@ -492,8 +538,33 @@ ClientSettings не является обязательным.
 - `custom_tv_select`
 - `templatesedit`
 - `pagebuilder`
+- `blang`
 
 Детект строится по файловым сигнатурам проекта и нужен, чтобы AI/инструменты точно понимали, какие расширения реально установлены.
+
+### bLang support
+
+Пакет умеет:
+
+- безопасно определять наличие `bLang` через `system_features.blang`
+- читать `blang_settings`, `blang_tmplvars`, `blang_tmplvar_templates`
+- возвращать нормализованный `blang` object в основном payload
+- отдавать тот же объект через `GET /api/template-registry/blang`
+- расширять `resource-context` секцией `blang` для текущего ресурса и его шаблона
+
+На реальных проектах `bLang` влияет не только на наличие файлов, но и на runtime-поведение:
+
+- язык и suffix берутся из `blang_settings`
+- переводимые поля описываются в `blang_tmplvars`
+- на фронте и в сниппетах часто используются `lang`, `suffix`, language urls и `bLang`-aware DocLister controllers
+- возможна связка с ClientSettings, templatesEdit и PageBuilder
+
+`resource-context` для `bLang` возвращает:
+
+- языки и suffixes
+- subset настроек `bLang`
+- `template_fields` для шаблона текущего ресурса
+- для каждого bLang-поля: `base_resource_value`, `localized_names` и доступные `resource_values`
 
 ### Поведение при ошибках API/команды
 
@@ -513,6 +584,7 @@ ClientSettings не является обязательным.
 - fallback-конвенции для controller и view
 - маппинг namespace/path для поиска файлов controller
 - опциональные пути/источники ClientSettings (`client_settings.config_path`, `client_settings.selector_controllers_path`, `client_settings.settings_table`, `client_settings.setting_prefixes`)
+- опциональные таблицы/пути `bLang` (`blang.settings_table`, `blang.fields_table`, `blang.template_links_table`, `blang.lexicon_table`, файловые сигнатуры `blang.*`)
 - сигнатуры related extensions (`multitv.*`, `custom_tv_select.*`, `templatesedit.*`)
 - сигнатуры и пути PageBuilder (`pagebuilder.*`)
 - таблицы для lookup ресурсов (`resources_table`, `tv_values_table`)
@@ -529,6 +601,7 @@ ClientSettings не является обязательным.
 - `GET /api/template-registry/stats`
 - `GET /api/template-registry/resource-resolve`
 - `GET /api/template-registry/resource-context`
+- `GET /api/template-registry/blang`
 - `GET /api/template-registry/pagebuilder-configs`
 - `GET /api/template-registry/pagebuilder-configs/{name}`
 - `POST /api/template-registry/templates`

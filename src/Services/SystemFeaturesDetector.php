@@ -27,6 +27,7 @@ class SystemFeaturesDetector
             'custom_tv_select' => $this->detectCustomTvSelect(),
             'templatesedit' => $this->detectTemplatesEdit(),
             'pagebuilder' => $this->detectPageBuilder(),
+            'blang' => $this->detectBLang(),
         ];
     }
 
@@ -152,6 +153,30 @@ class SystemFeaturesDetector
                 'config_dir_exists' => $configDirExists,
                 'customtv_file_exists' => $customTvFileExists,
                 'configs_count' => $configCount,
+            ],
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    private function detectBLang(): array
+    {
+        $modulePath = $this->absolutePath((string) $this->cfg('blang.module_path', 'assets/modules/blang'));
+        $classFile = $this->absolutePath((string) $this->cfg('blang.class_file', 'assets/modules/blang/classes/bLang.php'));
+        $pluginFile = $this->absolutePath((string) $this->cfg('blang.plugin_file', 'assets/modules/blang/plugin.bLang.php'));
+        $snippetFile = $this->absolutePath((string) $this->cfg('blang.snippet_file', 'assets/modules/blang/snippet.bLang.php'));
+
+        $modulePathExists = is_dir($modulePath);
+        $classFileExists = is_file($classFile);
+        $pluginFileExists = is_file($pluginFile);
+        $snippetFileExists = is_file($snippetFile);
+
+        return [
+            'installed' => $modulePathExists || $classFileExists || $pluginFileExists || $snippetFileExists,
+            'details' => [
+                'module_path_exists' => $modulePathExists,
+                'class_file_exists' => $classFileExists,
+                'plugin_file_exists' => $pluginFileExists,
+                'snippet_file_exists' => $snippetFileExists,
             ],
         ];
     }

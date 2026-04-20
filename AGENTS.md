@@ -189,6 +189,7 @@ Default prefix: `/api/template-registry`
 - `GET /api/template-registry/stats`
 - `GET /api/template-registry/resource-resolve`
 - `GET /api/template-registry/resource-context`
+- `GET /api/template-registry/blang`
 - `GET /api/template-registry/pagebuilder-configs`
 - `GET /api/template-registry/pagebuilder-configs/{name}`
 - `POST /api/template-registry/templates`
@@ -217,6 +218,8 @@ Resource context for local AI/tools:
 - `GET /api/template-registry/resource-resolve?resource_id=123`
 - `GET /api/template-registry/resource-context?url=/path/to/resource`
 - `GET /api/template-registry/resource-context?resource_id=123`
+
+`blang` returns bLang languages, suffixes, settings, fields catalog and template links for remote tooling.
 
 `resources` returns created resources with template meta and key system fields useful for admin/tooling context.
 Deleted resources are excluded by default; use `include_deleted=1` when you need the full list including soft-deleted items.
@@ -288,6 +291,7 @@ Registry payload must include:
 
 - `generated_at`, `project`, `templates`, `tv_catalog`, `stats`
 - `client_settings` object (always present)
+- `blang` object (always present)
 - `system_features` object with installation status for related extensions
 
 `client_settings` shape:
@@ -304,7 +308,19 @@ Registry payload must include:
 - `custom_tv_select.installed`
 - `templatesedit.installed`
 - `pagebuilder.installed`
+- `blang.installed`
 - each item may include `details` with filesystem diagnostics
+
+`blang` shape:
+
+- `exists` (bool)
+- `languages` (array)
+- `default_language` (string)
+- `suffixes` (object)
+- `settings` (object)
+- `fields_catalog` (array)
+- `template_links` (array)
+- `stats` with table/fields/template link counters
 
 ## Testing
 

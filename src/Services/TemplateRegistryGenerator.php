@@ -129,6 +129,7 @@ class TemplateRegistryGenerator
         $stats['unique_tvs'] = count($tvCatalog);
 
         $clientSettings = (new ClientSettingsExtractor($this->config, $this->projectRootPath()))->extract();
+        $blang = (new BLangExtractor($this->config, $this->projectRootPath()))->extract();
         $systemFeatures = (new SystemFeaturesDetector($this->config, $this->projectRootPath()))->detect();
 
         return [
@@ -137,6 +138,7 @@ class TemplateRegistryGenerator
             'templates' => $rows,
             'tv_catalog' => $tvCatalog,
             'client_settings' => $clientSettings,
+            'blang' => $blang,
             'system_features' => $systemFeatures,
             'stats' => $stats,
         ];
@@ -479,6 +481,7 @@ class TemplateRegistryGenerator
         $lines[] = '- custom_tv_select_installed: ' . ($this->featureInstalled($systemFeatures, 'custom_tv_select') ? 'true' : 'false');
         $lines[] = '- templatesedit_installed: ' . ($this->featureInstalled($systemFeatures, 'templatesedit') ? 'true' : 'false');
         $lines[] = '- pagebuilder_installed: ' . ($this->featureInstalled($systemFeatures, 'pagebuilder') ? 'true' : 'false');
+        $lines[] = '- blang_installed: ' . ($this->featureInstalled($systemFeatures, 'blang') ? 'true' : 'false');
         $lines[] = '';
         $lines[] = '| template id | alias | controller | view | tv count | flags |';
         $lines[] = '|---:|---|---|---|---:|---|';

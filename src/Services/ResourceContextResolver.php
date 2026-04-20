@@ -54,6 +54,9 @@ class ResourceContextResolver
                 'id' => (int) ($resource->id ?? 0),
                 'pagetitle' => (string) ($resource->pagetitle ?? ''),
                 'longtitle' => (string) ($resource->longtitle ?? ''),
+                'menutitle' => (string) ($resource->menutitle ?? ''),
+                'description' => (string) ($resource->description ?? ''),
+                'introtext' => (string) ($resource->introtext ?? ''),
                 'alias' => (string) ($resource->alias ?? ''),
                 'uri' => (string) ($resource->uri ?? ''),
                 'template_id' => $templateId,
@@ -63,6 +66,7 @@ class ResourceContextResolver
                 'matched_by' => $match['matched_by'],
             ],
             'template' => $template,
+            'blang' => $this->resolveBLangContext((array) ($payload['blang'] ?? []), $templateId, $resource),
             'tvs_available' => $availableTvs,
             'tv_values' => $tvValues,
             'stats' => [
@@ -323,7 +327,7 @@ class ResourceContextResolver
     private function findResourceMatch(string $contentTable, mixed $resourceId, mixed $url): ?array
     {
         $hasUriColumn = Schema::hasColumn($contentTable, 'uri');
-        $columns = ['id', 'pagetitle', 'longtitle', 'alias', 'template'];
+        $columns = ['id', 'pagetitle', 'longtitle', 'menutitle', 'description', 'introtext', 'alias', 'template'];
         if ($hasUriColumn) {
             $columns[] = 'uri';
         }
@@ -645,6 +649,85 @@ class ResourceContextResolver
         $trimmed = preg_replace('/\.html$/i', '', $trimmed) ?: $trimmed;
 
         return $trimmed;
+    }
+
+    /** @param array<string,mixed> $blangPayload @return array<string,mixed> */
+    private function resolveBLangContext(array $blangPayload, int $templateId, object $resource): array
+    {
+        $enabled = !empty($blangPayload['exists']);
+        $languages = array_values(array_filter((array) ($blangPayload['languages'] ?? []), static fn (mixed $lang): bool => is_string($lang) && trim($lang) !== ''));
+        $suffixes = is_array($blangPayload['suffixes'] ?? null) ? $blangPayload['suffixes'] : [];
+        $templateFields = [];
+
+        $allowedFieldIds = [];
+        foreach ((array) ($blangPayload['template_links'] ?? []) as $link) {
+            if (!is_array($link) || (int) ($link['template_id'] ?? 0) !== $templateId) {
+                continue;
+            }
+
+            $fieldId = (int) ($link['field_id'] ?? 0);
+            if ($fieldId > 0) {
+                $allowedFieldIds[$fieldId] = (int) ($link['rank'] ?? 0);
+            }
+        }
+
+        foreach ((array) ($blangPayload['fields_catalog'] ?? []) as $field) {
+            if (!is_array($field)) {
+                continue;
+            }
+
+            $fieldId = (int) ($field['id'] ?? 0);
+            if ($fieldId <= 0 || !array_key_exists($fieldId, $allowedFieldIds)) {
+                continue;
+            }
+
+            $baseName = (string) ($field['name'] ?? '');
+            $localizedNames = [];
+            $resourceValues = [];
+            $baseResourceValue = property_exists($resource, $baseName)
+                ? (string) ($resource->{$baseName} ?? '')
+                : '';
+            foreach ($languages as $language) {
+                $resolvedName = $baseName . (string) ($suffixes[$language] ?? '');
+                $localizedNames[$language] = $resolvedName;
+                if (property_exists($resource, $resolvedName)) {
+                    $resourceValues[$language] = (string) ($resource->{$resolvedName} ?? '');
+                }
+            }
+
+            $templateFields[] = [
+                'id' => $fieldId,
+                'name' => $baseName,
+                'caption' => (string) ($field['caption'] ?? ''),
+                'type' => (string) ($field['type'] ?? ''),
+                'tab' => (string) ($field['tab'] ?? ''),
+                'rank' => $allowedFieldIds[$fieldId],
+                'base_resource_value' => $baseResourceValue,
+                'localized_names' => $localizedNames,
+                'resource_values' => $resourceValues,
+            ];
+        }
+
+        usort($templateFields, static function (array $left, array $right): int {
+            $rankCompare = ((int) ($left['rank'] ?? 0)) <=> ((int) ($right['rank'] ?? 0));
+            if ($rankCompare !== 0) {
+                return $rankCompare;
+            }
+
+            return ((int) ($left['id'] ?? 0)) <=> ((int) ($right['id'] ?? 0));
+        });
+
+        return [
+            'enabled' => $enabled,
+            'default_language' => (string) ($blangPayload['default_language'] ?? ''),
+            'languages' => $languages,
+            'suffixes' => $suffixes,
+            'settings' => (array) ($blangPayload['settings'] ?? []),
+            'template_fields' => $templateFields,
+            'stats' => [
+                'template_fields_total' => count($templateFields),
+            ],
+        ];
     }
 
     private function resolveTableName(string $base): ?string

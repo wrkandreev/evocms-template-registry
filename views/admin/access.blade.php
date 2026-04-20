@@ -190,6 +190,10 @@
                         <div class="value @if(!empty($features['pagebuilder']['installed'])) is-yes @else is-no @endif">@if(!empty($features['pagebuilder']['installed'])) yes @else no @endif</div>
                         <div class="label">PageBuilder</div>
                     </div>
+                    <div class="stat-card">
+                        <div class="value @if(!empty($features['blang']['installed'])) is-yes @else is-no @endif">@if(!empty($features['blang']['installed'])) yes @else no @endif</div>
+                        <div class="label">bLang</div>
+                    </div>
                 </div>
                 <table class="table data">
                     <tbody>

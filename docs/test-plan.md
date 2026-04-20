@@ -78,6 +78,9 @@ Validate safe behavior of template registry generation and API with optional Cli
 8. Related system features detection
 
 - Verify payload always contains `system_features` object.
+- Verify payload always contains `blang` object.
+- If `bLang` files are present on the project, verify `system_features.blang.installed=true`.
+- If `bLang` tables are present, verify `GET /api/template-registry/blang` returns languages, suffixes, fields catalog and template links.
 - On project with related extensions installed, verify correct `installed=true` flags for:
   - `client_settings`
   - `multitv`

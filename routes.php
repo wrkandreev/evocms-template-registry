@@ -60,6 +60,7 @@ Route::prefix($apiPrefix)
         Route::get('/stats', [TemplateRegistryApiController::class, 'stats']);
         Route::get('/resource-resolve', [TemplateRegistryApiController::class, 'resourceResolve']);
         Route::get('/resource-context', [TemplateRegistryApiController::class, 'resourceContext']);
+        Route::get('/blang', [TemplateRegistryApiController::class, 'blang']);
         Route::get('/pagebuilder-configs', [TemplateRegistryApiController::class, 'pageBuilderConfigs']);
         Route::get('/pagebuilder-configs/{name}', [TemplateRegistryApiController::class, 'pageBuilderConfigByName']);
     });

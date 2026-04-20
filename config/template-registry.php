@@ -70,6 +70,17 @@ return [
         'customtv_file' => 'assets/tvs/pagebuilder/pagebuilder.customtv.php',
     ],
 
+    'blang' => [
+        'module_path' => 'assets/modules/blang',
+        'class_file' => 'assets/modules/blang/classes/bLang.php',
+        'plugin_file' => 'assets/modules/blang/plugin.bLang.php',
+        'snippet_file' => 'assets/modules/blang/snippet.bLang.php',
+        'settings_table' => 'blang_settings',
+        'fields_table' => 'blang_tmplvars',
+        'template_links_table' => 'blang_tmplvar_templates',
+        'lexicon_table' => 'blang',
+    ],
+
     'migrations' => [
         'path' => 'core/custom/template-registry/migrations',
         'table' => 'template_registry_migrations',

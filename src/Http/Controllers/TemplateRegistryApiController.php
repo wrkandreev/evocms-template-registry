@@ -188,6 +188,15 @@ class TemplateRegistryApiController
         }
     }
 
+    public function blang()
+    {
+        try {
+            return \response()->json((array) ($this->payload()['blang'] ?? []));
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+    }
+
     public function pageBuilderConfigByName(string $name)
     {
         try {
