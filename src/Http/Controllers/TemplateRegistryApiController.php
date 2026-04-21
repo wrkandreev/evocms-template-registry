@@ -6,6 +6,8 @@ namespace WrkAndreev\EvocmsTemplateRegistry\Http\Controllers;
 
 use Illuminate\Http\Request;
 use RuntimeException;
+use WrkAndreev\EvocmsTemplateRegistry\Services\BLangHealthService;
+use WrkAndreev\EvocmsTemplateRegistry\Services\BLangLexiconService;
 use WrkAndreev\EvocmsTemplateRegistry\Services\PageBuilderConfigExtractor;
 use WrkAndreev\EvocmsTemplateRegistry\Services\ResourceContextResolver;
 use WrkAndreev\EvocmsTemplateRegistry\Services\TemplateRegistryGenerator;
@@ -192,6 +194,28 @@ class TemplateRegistryApiController
     {
         try {
             return \response()->json((array) ($this->payload()['blang'] ?? []));
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+    }
+
+    public function blangLexicon(Request $request)
+    {
+        try {
+            $config = (array) \config('template-registry', []);
+            $service = new BLangLexiconService($config);
+            $limit = (int) $request->query('limit', 500);
+            return \response()->json($service->listEntries($limit));
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+    }
+
+    public function blangHealth()
+    {
+        try {
+            $service = new BLangHealthService((array) \config('template-registry', []));
+            return \response()->json($service->health());
         } catch (RuntimeException $e) {
             return $this->errorResponse($e->getMessage());
         }

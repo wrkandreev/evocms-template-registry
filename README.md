@@ -311,6 +311,7 @@ Migration command failures print the same code in CLI output, for example:
 - `GET /api/template-registry/resource-resolve` быстрый резолв `resource_id` по URL или id
 - `GET /api/template-registry/resource-context` контекст ресурс/шаблон/TV по URL или id
 - `GET /api/template-registry/blang` конфигурация `bLang`, поля и связи с шаблонами
+- `GET /api/template-registry/blang/lexicon` записи словаря `bLang`
 - `GET /api/template-registry/pagebuilder-configs` список PageBuilder-конфигов
 - `GET /api/template-registry/pagebuilder-configs/{name}` один PageBuilder-конфиг по имени
 - `POST /api/template-registry/templates` создать шаблон
@@ -566,6 +567,142 @@ ClientSettings не является обязательным.
 - `template_fields` для шаблона текущего ресурса
 - для каждого bLang-поля: `base_resource_value`, `localized_names` и доступные `resource_values`
 
+Для словаря `bLang` доступен отдельный API:
+
+- `POST /api/template-registry/blang/fields`
+- `PATCH /api/template-registry/blang/fields/{fieldId}`
+- `DELETE /api/template-registry/blang/fields/{fieldId}`
+- `PATCH /api/template-registry/blang/settings`
+- `DELETE /api/template-registry/blang/languages/{language}`
+- `GET /api/template-registry/blang/lexicon`
+- `GET /api/template-registry/blang/health`
+- `POST /api/template-registry/blang/lexicon`
+- `PATCH /api/template-registry/blang/lexicon/{entryId}`
+- `DELETE /api/template-registry/blang/lexicon/{entryId}`
+- `POST /api/template-registry/blang/default-params`
+- `POST /api/template-registry/blang/fix-template-links`
+
+Write-contract для `bLang`-поля:
+
+```json
+{
+  "name": "missionTitle",
+  "caption": "Наша миссия: Заголовок",
+  "type": "textareamini",
+  "tab": "mission.[lang]",
+  "category": "main",
+  "template_ids": [8]
+}
+```
+
+Что делает API поля `bLang`:
+
+- создает или обновляет запись в `blang_tmplvars`
+- сохраняет привязки шаблонов в `blang_tmplvar_templates`
+- синхронизирует реальные локализованные TV в `site_tmplvars`
+- при rename поля переименовывает связанные локализованные TV
+- при delete удаляет `bLang`-поле, его template links и производные локализованные TV
+
+Write-contract для настроек `bLang`:
+
+```json
+{
+  "languages": ["ru", "en"],
+  "suffixes": {
+    "ru": "",
+    "en": "_en"
+  },
+  "default": "ru",
+  "autoFields": true,
+  "autoUrl": true,
+  "default_to_new_tab": false,
+  "menu_controller_fields": ["pagetitle", "menutitle"],
+  "content_controller_fields": ["pagetitle", "menutitle", "introtext", "longtitle", "description"],
+  "clientSettingsPrefix": "client_",
+  "translate": false,
+  "translate_provider": "",
+  "pb_show_btn": false,
+  "pb_is_te3": false,
+  "pb_config": ""
+}
+```
+
+Что делает `PATCH /api/template-registry/blang/settings`:
+
+- обновляет записи в `blang_settings`
+- при добавлении новых языков добавляет недостающие колонки в таблицу `blang`
+- после изменения `languages` или `suffixes` пересинхронизирует локализованные TV из `blang_tmplvars`
+
+Важно: endpoint зеркалит manager settings, но не делает destructive schema changes и не удаляет старые языковые колонки из `blang`.
+
+Удаление языка `bLang` делается отдельной операцией:
+
+```json
+{
+  "new_default": "en"
+}
+```
+
+Используйте `DELETE /api/template-registry/blang/languages/{language}` только когда язык действительно нужно убрать из active model.
+Endpoint обновляет `languages`, `suffixes` и `default` в `blang_settings`, затем пересинхронизирует локализованные TVs.
+Он не удаляет старые языковые колонки словаря `blang` из БД.
+
+Write-contract для словаря:
+
+```json
+{
+  "name": "cta_submit",
+  "values": {
+    "ru": "Отправить",
+    "en": "Submit"
+  }
+}
+```
+
+`name` обязателен. `values` принимает переводы по language keys из `blang.languages`. Также можно передавать языковые ключи плоско в теле запроса (`ru`, `en`) без вложенного `values`.
+
+API для кнопки `Добавить стандартные параметры`:
+
+```json
+{
+  "attach_all_templates": true
+}
+```
+
+Что делает этот endpoint:
+
+- добавляет отсутствующие записи из стандартного набора в `blang_tmplvars`
+- при `attach_all_templates=true` привязывает их ко всем шаблонам в `blang_tmplvar_templates`
+- затем синхронизирует реальные `site_tmplvars` из `bLang`-описаний
+
+Важно: `bLang` считает источником истины таблицу `blang_tmplvars`, а не пары TV в `site_tmplvars`.
+Если вручную создать `missionTitle` и `missionTitle_en` только как обычные TV, модуль не начнет считать их `bLang`-парой автоматически.
+Для корректной пары поле должно существовать в `blang_tmplvars`, после чего `bLang` сам синхронизирует локализованные TV по suffixes.
+
+Write-contract для локализованных значений ресурса:
+
+```json
+{
+  "values": {
+    "pagetitle_en": "About Braver",
+    "introtext_en": "Short intro",
+    "missionTitle_en": "Mission title"
+  }
+}
+```
+
+`PATCH /api/template-registry/resources/{resourceId}/blang-fields` обновляет:
+
+- локализованные resource columns в `site_content`, если поле существует там физически
+- локализованные TVs в `site_tmplvar_contentvalues`, если поле реализовано как `bLang` TV
+
+`GET /api/template-registry/blang/health` показывает drift между:
+
+- `blang_tmplvar_templates`
+- `site_tmplvar_templates`
+
+`POST /api/template-registry/blang/fix-template-links` добавляет недостающие `bLang` template links там, где локализованные TVs уже отмечены у шаблона в MODX, а в `bLang` связь отсутствует.
+
 ### Поведение при ошибках API/команды
 
 - Отсутствие обязательных таблиц TV/template возвращает контролируемую ошибку (без фатала).
@@ -602,6 +739,7 @@ ClientSettings не является обязательным.
 - `GET /api/template-registry/resource-resolve`
 - `GET /api/template-registry/resource-context`
 - `GET /api/template-registry/blang`
+- `GET /api/template-registry/blang/lexicon`
 - `GET /api/template-registry/pagebuilder-configs`
 - `GET /api/template-registry/pagebuilder-configs/{name}`
 - `POST /api/template-registry/templates`
@@ -614,6 +752,14 @@ ClientSettings не является обязательным.
 - `PATCH /api/template-registry/resources/{resourceId}`
 - `DELETE /api/template-registry/resources/{resourceId}`
 - `PUT /api/template-registry/resources/{resourceId}/restore`
+- `POST /api/template-registry/blang/lexicon`
+- `PATCH /api/template-registry/blang/lexicon/{entryId}`
+- `DELETE /api/template-registry/blang/lexicon/{entryId}`
+- `POST /api/template-registry/blang/default-params`
+- `POST /api/template-registry/blang/fields`
+- `PATCH /api/template-registry/blang/fields/{fieldId}`
+- `DELETE /api/template-registry/blang/fields/{fieldId}`
+- `PATCH /api/template-registry/blang/settings`
 - `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `PUT /api/template-registry/resources/{resourceId}/template`

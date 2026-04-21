@@ -81,6 +81,14 @@ Validate safe behavior of template registry generation and API with optional Cli
 - Verify payload always contains `blang` object.
 - If `bLang` files are present on the project, verify `system_features.blang.installed=true`.
 - If `bLang` tables are present, verify `GET /api/template-registry/blang` returns languages, suffixes, fields catalog and template links.
+- If `bLang` tables are present, verify `GET /api/template-registry/blang/lexicon` returns dictionary entries.
+- Verify `POST/PATCH/DELETE /api/template-registry/blang/lexicon` work with write token and affect `bLang` dictionary rows as expected.
+- Verify `POST /api/template-registry/blang/default-params` seeds missing default `blang_tmplvars` entries and syncs localized TVs.
+- Verify `POST/PATCH/DELETE /api/template-registry/blang/fields` create, rename and remove a `bLang` field together with generated localized TVs.
+- Verify `PATCH /api/template-registry/blang/settings` updates `blang_settings`, validates languages/default/suffixes and re-syncs localized TVs.
+- Verify `DELETE /api/template-registry/blang/languages/{language}` requires explicit valid replacement default when needed.
+- Verify `PATCH /api/template-registry/resources/{resourceId}/blang-fields` updates both localized `site_content` columns and localized TV values where applicable.
+- Verify `GET /api/template-registry/blang/health` reports missing bLang/template TV links and `POST /api/template-registry/blang/fix-template-links` repairs them.
 - On project with related extensions installed, verify correct `installed=true` flags for:
   - `client_settings`
   - `multitv`

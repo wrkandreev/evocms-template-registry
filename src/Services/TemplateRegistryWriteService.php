@@ -647,6 +647,112 @@ class TemplateRegistryWriteService
         ];
     }
 
+    /** @param array<string,mixed> $input @return array<string,mixed> */
+    public function setResourceBLangFieldValues(int $resourceId, array $input): array
+    {
+        $contentTable = $this->requireTable('resources_table', 'site_content');
+        $tvTable = $this->requireTable('tvs_table', 'site_tmplvars');
+        $tvValuesTable = $this->requireTable('tv_values_table', 'site_tmplvar_contentvalues');
+        $this->assertExists($contentTable, $resourceId, 'Resource');
+        $templateId = (int) DB::table($contentTable)->where('id', $resourceId)->value('template');
+
+        $values = isset($input['values']) && is_array($input['values']) ? $input['values'] : $input;
+        if (!is_array($values) || $values === []) {
+            throw new RuntimeException('No bLang field values provided for update.');
+        }
+
+        $allowedNames = [];
+        $payload = (new TemplateRegistryGenerator($this->config))->buildPayload();
+        $blang = (array) ($payload['blang'] ?? []);
+        $templateLinks = is_array($blang['template_links'] ?? null) ? $blang['template_links'] : [];
+        $fieldsCatalog = is_array($blang['fields_catalog'] ?? null) ? $blang['fields_catalog'] : [];
+        $allowedFieldIds = [];
+        foreach ($templateLinks as $link) {
+            if (!is_array($link) || (int) ($link['template_id'] ?? 0) !== $templateId) {
+                continue;
+            }
+            $fieldId = (int) ($link['field_id'] ?? 0);
+            if ($fieldId > 0) {
+                $allowedFieldIds[$fieldId] = true;
+            }
+        }
+
+        foreach ($fieldsCatalog as $field) {
+            if (!is_array($field)) {
+                continue;
+            }
+            $fieldId = (int) ($field['id'] ?? 0);
+            if ($fieldId <= 0 || !isset($allowedFieldIds[$fieldId])) {
+                continue;
+            }
+            $localizedNames = is_array($field['localized_names'] ?? null) ? $field['localized_names'] : [];
+            foreach ($localizedNames as $name) {
+                if (is_string($name) && trim($name) !== '') {
+                    $allowedNames[$name] = $name;
+                }
+            }
+        }
+
+        $contentColumns = $this->columnMap($contentTable);
+        $contentPayload = [];
+        $updatedTvIds = [];
+
+        DB::transaction(function () use ($values, $allowedNames, $contentColumns, $contentTable, $resourceId, &$contentPayload, $tvTable, $tvValuesTable, &$updatedTvIds): void {
+            foreach ($values as $fieldName => $fieldValue) {
+                $fieldName = trim((string) $fieldName);
+                if ($fieldName === '' || !isset($allowedNames[$fieldName])) {
+                    throw new RuntimeException('bLang field name is invalid.');
+                }
+
+                if (isset($contentColumns[$fieldName])) {
+                    $contentPayload[$fieldName] = (string) ($fieldValue ?? '');
+                    continue;
+                }
+
+                $tvId = (int) DB::table($tvTable)->where('name', $fieldName)->value('id');
+                if ($tvId <= 0) {
+                    throw new RuntimeException('bLang localized TV not found.');
+                }
+
+                $exists = DB::table($tvValuesTable)
+                    ->where('contentid', $resourceId)
+                    ->where('tmplvarid', $tvId)
+                    ->exists();
+
+                $tvPayload = [
+                    'contentid' => $resourceId,
+                    'tmplvarid' => $tvId,
+                    'value' => (string) ($fieldValue ?? ''),
+                ];
+
+                if ($exists) {
+                    DB::table($tvValuesTable)
+                        ->where('contentid', $resourceId)
+                        ->where('tmplvarid', $tvId)
+                        ->update(['value' => $tvPayload['value']]);
+                } else {
+                    DB::table($tvValuesTable)->insert($tvPayload);
+                }
+                $updatedTvIds[] = $tvId;
+            }
+
+            if ($contentPayload !== []) {
+                DB::table($contentTable)->where('id', $resourceId)->update($contentPayload);
+            }
+        });
+
+        $regenerated = $this->regenerateRegistryIfNeeded();
+
+        return [
+            'entity' => 'resource_blang_fields',
+            'id' => $resourceId,
+            'message' => 'Resource bLang fields updated.',
+            'updated_columns' => array_keys($contentPayload),
+            'updated_tv_ids' => array_values(array_unique(array_map('intval', $updatedTvIds))),
+            'regenerated' => $regenerated,
+        ];
+    }
+
     private function setResourceTvValueInternal(int $resourceId, int $tvId, mixed $value): void
     {
         if ($resourceId <= 0) {

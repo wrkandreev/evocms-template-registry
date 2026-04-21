@@ -61,6 +61,8 @@ Route::prefix($apiPrefix)
         Route::get('/resource-resolve', [TemplateRegistryApiController::class, 'resourceResolve']);
         Route::get('/resource-context', [TemplateRegistryApiController::class, 'resourceContext']);
         Route::get('/blang', [TemplateRegistryApiController::class, 'blang']);
+        Route::get('/blang/health', [TemplateRegistryApiController::class, 'blangHealth']);
+        Route::get('/blang/lexicon', [TemplateRegistryApiController::class, 'blangLexicon']);
         Route::get('/pagebuilder-configs', [TemplateRegistryApiController::class, 'pageBuilderConfigs']);
         Route::get('/pagebuilder-configs/{name}', [TemplateRegistryApiController::class, 'pageBuilderConfigByName']);
     });
@@ -86,6 +88,17 @@ Route::prefix($apiPrefix)
         Route::put('/resources/{resourceId}/template', [TemplateRegistryWriteApiController::class, 'setResourceTemplate'])->where('resourceId', '[0-9]+');
         Route::put('/resources/{resourceId}/published', [TemplateRegistryWriteApiController::class, 'setResourcePublished'])->where('resourceId', '[0-9]+');
         Route::put('/resources/{resourceId}/tv-values/{tvId}', [TemplateRegistryWriteApiController::class, 'setResourceTvValue'])->where(['resourceId' => '[0-9]+', 'tvId' => '[0-9]+']);
+        Route::patch('/resources/{resourceId}/blang-fields', [TemplateRegistryWriteApiController::class, 'setResourceBLangFields'])->where('resourceId', '[0-9]+');
+        Route::post('/blang/lexicon', [TemplateRegistryWriteApiController::class, 'createBLangLexiconEntry']);
+        Route::post('/blang/fields', [TemplateRegistryWriteApiController::class, 'createBLangField']);
+        Route::patch('/blang/lexicon/{entryId}', [TemplateRegistryWriteApiController::class, 'updateBLangLexiconEntry'])->where('entryId', '[0-9]+');
+        Route::patch('/blang/fields/{fieldId}', [TemplateRegistryWriteApiController::class, 'updateBLangField'])->where('fieldId', '[0-9]+');
+        Route::delete('/blang/lexicon/{entryId}', [TemplateRegistryWriteApiController::class, 'deleteBLangLexiconEntry'])->where('entryId', '[0-9]+');
+        Route::delete('/blang/fields/{fieldId}', [TemplateRegistryWriteApiController::class, 'deleteBLangField'])->where('fieldId', '[0-9]+');
+        Route::post('/blang/default-params', [TemplateRegistryWriteApiController::class, 'createBLangDefaultParams']);
+        Route::post('/blang/fix-template-links', [TemplateRegistryWriteApiController::class, 'fixBLangTemplateLinks']);
+        Route::patch('/blang/settings', [TemplateRegistryWriteApiController::class, 'updateBLangSettings']);
+        Route::delete('/blang/languages/{language}', [TemplateRegistryWriteApiController::class, 'removeBLangLanguage']);
     });
 
 $adminPrefix = trim((string) ($apiConfig['admin_prefix'] ?? 'template-registry-admin'), '/');

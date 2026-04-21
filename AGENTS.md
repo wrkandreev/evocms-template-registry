@@ -190,6 +190,8 @@ Default prefix: `/api/template-registry`
 - `GET /api/template-registry/resource-resolve`
 - `GET /api/template-registry/resource-context`
 - `GET /api/template-registry/blang`
+- `GET /api/template-registry/blang/health`
+- `GET /api/template-registry/blang/lexicon`
 - `GET /api/template-registry/pagebuilder-configs`
 - `GET /api/template-registry/pagebuilder-configs/{name}`
 - `POST /api/template-registry/templates`
@@ -202,6 +204,17 @@ Default prefix: `/api/template-registry`
 - `PATCH /api/template-registry/resources/{resourceId}`
 - `DELETE /api/template-registry/resources/{resourceId}`
 - `PUT /api/template-registry/resources/{resourceId}/restore`
+- `POST /api/template-registry/blang/lexicon`
+- `PATCH /api/template-registry/blang/lexicon/{entryId}`
+- `DELETE /api/template-registry/blang/lexicon/{entryId}`
+- `POST /api/template-registry/blang/default-params`
+- `POST /api/template-registry/blang/fix-template-links`
+- `POST /api/template-registry/blang/fields`
+- `PATCH /api/template-registry/blang/fields/{fieldId}`
+- `DELETE /api/template-registry/blang/fields/{fieldId}`
+- `PATCH /api/template-registry/blang/settings`
+- `DELETE /api/template-registry/blang/languages/{language}`
+- `PATCH /api/template-registry/resources/{resourceId}/blang-fields`
 - `PUT /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `PUT /api/template-registry/resources/{resourceId}/template`
@@ -220,6 +233,12 @@ Resource context for local AI/tools:
 - `GET /api/template-registry/resource-context?resource_id=123`
 
 `blang` returns bLang languages, suffixes, settings, fields catalog and template links for remote tooling.
+`blang/health` reports drift between bLang template links and actual localized TV assignments.
+`blang/lexicon` returns and mutates dictionary entries stored in the `blang` table.
+`blang/default-params` mirrors the manager button that seeds default `blang_tmplvars` entries and syncs generated localized TVs.
+`blang/fix-template-links` repairs missing links in `blang_tmplvar_templates` based on current template TV assignments.
+`blang/fields` mutates `blang_tmplvars` and `blang_tmplvar_templates`, then syncs localized TVs in `site_tmplvars`.
+`blang/settings` mutates `blang_settings`, adds missing language columns in `blang`, then re-syncs localized TVs when language model changes.
 
 `resources` returns created resources with template meta and key system fields useful for admin/tooling context.
 Deleted resources are excluded by default; use `include_deleted=1` when you need the full list including soft-deleted items.
