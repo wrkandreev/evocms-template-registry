@@ -49,7 +49,12 @@ class TemplateRegistryWriteService
         $this->assignIfColumn($payload, $columns, 'description', (string) ($input['description'] ?? ''));
         $this->assignIfColumn($payload, $columns, 'content', (string) ($input['content'] ?? ''));
         $this->assignIfColumn($payload, $columns, 'icon', (string) ($input['icon'] ?? ''));
-        $this->assignIfColumn($payload, $columns, 'templatecontroller', (string) ($input['controller'] ?? $input['templatecontroller'] ?? ''));
+        $this->assignIfColumn(
+            $payload,
+            $columns,
+            'templatecontroller',
+            $this->normalizeTemplateController((string) ($input['controller'] ?? $input['templatecontroller'] ?? ''))
+        );
 
         $view = trim((string) ($input['view'] ?? ''));
         foreach (['templateview', 'view', 'template_view'] as $column) {
@@ -108,7 +113,12 @@ class TemplateRegistryWriteService
         }
 
         if (array_key_exists('controller', $input) || array_key_exists('templatecontroller', $input)) {
-            $this->assignIfColumn($payload, $columns, 'templatecontroller', (string) ($input['controller'] ?? $input['templatecontroller'] ?? ''));
+            $this->assignIfColumn(
+                $payload,
+                $columns,
+                'templatecontroller',
+                $this->normalizeTemplateController((string) ($input['controller'] ?? $input['templatecontroller'] ?? ''))
+            );
         }
 
         if (array_key_exists('view', $input) || array_key_exists('templateview', $input) || array_key_exists('template_view', $input)) {
@@ -889,6 +899,19 @@ class TemplateRegistryWriteService
         }
 
         return $table;
+    }
+
+    private function normalizeTemplateController(string $controller): string
+    {
+        $controller = trim($controller);
+        if ($controller === '') {
+            return '';
+        }
+
+        $normalized = str_replace('/', '\\', $controller);
+        $parts = array_values(array_filter(explode('\\', $normalized), static fn (string $part): bool => $part !== ''));
+
+        return $parts === [] ? '' : (string) end($parts);
     }
 
     private function resolveTableName(string $base): ?string
