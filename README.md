@@ -527,6 +527,16 @@ Migration command failures print the same code in CLI output, for example:
         "configs_count": 0
       }
     },
+    "simplegallery": {
+      "installed": false,
+      "details": {
+        "plugin_dir_exists": false,
+        "plugin_file_exists": false,
+        "thumb_plugin_file_exists": false,
+        "snippets_dir_exists": false,
+        "snippets_count": 0
+      }
+    },
     "blang": {
       "installed": false,
       "details": {
@@ -589,6 +599,7 @@ ClientSettings не является обязательным.
 - `custom_tv_select`
 - `templatesedit`
 - `pagebuilder`
+- `simplegallery`
 - `blang`
 
 Детект строится по файловым сигнатурам проекта и нужен, чтобы AI/инструменты точно понимали, какие расширения реально установлены.

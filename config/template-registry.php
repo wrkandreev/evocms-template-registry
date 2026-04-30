@@ -71,6 +71,13 @@ return [
         'customtv_file' => 'assets/tvs/pagebuilder/pagebuilder.customtv.php',
     ],
 
+    'simplegallery' => [
+        'plugin_path' => 'assets/plugins/simplegallery',
+        'plugin_file' => 'assets/plugins/simplegallery/plugin.simplegallery.php',
+        'thumb_plugin_file' => 'assets/plugins/simplegallery/plugin.sgthumb.php',
+        'snippets_path' => 'assets/snippets/simplegallery',
+    ],
+
     'blang' => [
         'module_path' => 'assets/modules/blang',
         'class_file' => 'assets/modules/blang/classes/bLang.php',

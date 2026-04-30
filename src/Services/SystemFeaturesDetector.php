@@ -27,6 +27,7 @@ class SystemFeaturesDetector
             'custom_tv_select' => $this->detectCustomTvSelect(),
             'templatesedit' => $this->detectTemplatesEdit(),
             'pagebuilder' => $this->detectPageBuilder(),
+            'simplegallery' => $this->detectSimpleGallery(),
             'blang' => $this->detectBLang(),
         ];
     }
@@ -153,6 +154,38 @@ class SystemFeaturesDetector
                 'config_dir_exists' => $configDirExists,
                 'customtv_file_exists' => $customTvFileExists,
                 'configs_count' => $configCount,
+            ],
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    private function detectSimpleGallery(): array
+    {
+        $pluginDir = $this->absolutePath((string) $this->cfg('simplegallery.plugin_path', 'assets/plugins/simplegallery'));
+        $pluginFile = $this->absolutePath((string) $this->cfg('simplegallery.plugin_file', 'assets/plugins/simplegallery/plugin.simplegallery.php'));
+        $thumbPluginFile = $this->absolutePath((string) $this->cfg('simplegallery.thumb_plugin_file', 'assets/plugins/simplegallery/plugin.sgthumb.php'));
+        $snippetsDir = $this->absolutePath((string) $this->cfg('simplegallery.snippets_path', 'assets/snippets/simplegallery'));
+
+        $snippetFiles = is_dir($snippetsDir)
+            ? array_merge(
+                glob($snippetsDir . '/*.php') ?: [],
+                glob($snippetsDir . '/*.inc.php') ?: []
+            )
+            : [];
+
+        $pluginDirExists = is_dir($pluginDir);
+        $pluginFileExists = is_file($pluginFile);
+        $thumbPluginFileExists = is_file($thumbPluginFile);
+        $snippetsDirExists = is_dir($snippetsDir);
+
+        return [
+            'installed' => $pluginDirExists || $pluginFileExists || $thumbPluginFileExists || $snippetsDirExists,
+            'details' => [
+                'plugin_dir_exists' => $pluginDirExists,
+                'plugin_file_exists' => $pluginFileExists,
+                'thumb_plugin_file_exists' => $thumbPluginFileExists,
+                'snippets_dir_exists' => $snippetsDirExists,
+                'snippets_count' => count($snippetFiles),
             ],
         ];
     }

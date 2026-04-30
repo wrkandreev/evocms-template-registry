@@ -199,7 +199,7 @@ class ModulePreviewBuilder
     /** @param array<string,mixed> $systemFeatures @return array<string,mixed> */
     private function buildSystemFeaturesPreview(array $systemFeatures): array
     {
-        $keys = ['client_settings', 'multitv', 'custom_tv_select', 'templatesedit', 'pagebuilder', 'blang'];
+        $keys = ['client_settings', 'multitv', 'custom_tv_select', 'templatesedit', 'pagebuilder', 'simplegallery', 'blang'];
         $items = [];
 
         foreach ($keys as $key) {

@@ -356,6 +356,7 @@ Registry payload must include:
 - `custom_tv_select.installed`
 - `templatesedit.installed`
 - `pagebuilder.installed`
+- `simplegallery.installed`
 - `blang.installed`
 - each item may include `details` with filesystem diagnostics
 
