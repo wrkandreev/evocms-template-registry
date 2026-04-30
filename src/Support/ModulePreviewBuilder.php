@@ -26,6 +26,7 @@ class ModulePreviewBuilder
         }
 
         $resources = $this->buildResourcesPreview($config, $payload);
+        $resourcesTotal = $this->countResources($config);
 
         return [
             'preview' => [
@@ -38,10 +39,11 @@ class ModulePreviewBuilder
                 'resources' => $resources,
                 'templates_total' => count((array) ($payload['templates'] ?? [])),
                 'tv_total' => count((array) ($payload['tv_catalog'] ?? [])),
-                'resources_total' => count($resources),
+                'resources_total' => $resourcesTotal,
+                'resources_shown' => count($resources),
                 'templates_truncated' => count((array) ($payload['templates'] ?? [])) > 100,
                 'tv_truncated' => count((array) ($payload['tv_catalog'] ?? [])) > 200,
-                'resources_truncated' => count($resources) >= 100,
+                'resources_truncated' => $resourcesTotal > count($resources),
             ],
             'error' => null,
         ];
@@ -145,6 +147,15 @@ class ModulePreviewBuilder
                 'alias_visible' => $resource['alias_visible'] ?? null,
             ];
         }, $resources);
+    }
+
+    private function countResources(array $config): int
+    {
+        try {
+            return (new ResourceContextResolver($config))->countResources();
+        } catch (RuntimeException) {
+            return 0;
+        }
     }
 
     /** @param array<string,mixed> $clientSettings @return array<string,mixed> */

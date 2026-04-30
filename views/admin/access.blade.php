@@ -161,7 +161,7 @@
                     </div>
                     <div class="stat-card">
                         <div class="value">{{ (int) ($preview['resources_total'] ?? 0) }}</div>
-                        <div class="label">Resources shown</div>
+                        <div class="label">Resources total</div>
                     </div>
                     <div class="stat-card">
                         <div class="value">{{ (int) (($preview['client_settings']['stats']['fields_total'] ?? 0)) }}</div>
@@ -191,6 +191,10 @@
                         <div class="label">PageBuilder</div>
                     </div>
                     <div class="stat-card">
+                        <div class="value @if(!empty($features['simplegallery']['installed'])) is-yes @else is-no @endif">@if(!empty($features['simplegallery']['installed'])) yes @else no @endif</div>
+                        <div class="label">SimpleGallery</div>
+                    </div>
+                    <div class="stat-card">
                         <div class="value @if(!empty($features['blang']['installed'])) is-yes @else is-no @endif">@if(!empty($features['blang']['installed'])) yes @else no @endif</div>
                         <div class="label">bLang</div>
                     </div>
@@ -206,7 +210,8 @@
                         <td>
                             templates: {{ (int) ($preview['templates_total'] ?? 0) }},
                             tvs: {{ (int) ($preview['tv_total'] ?? 0) }},
-                            resources shown: {{ (int) ($preview['resources_total'] ?? 0) }}
+                            resources total: {{ (int) ($preview['resources_total'] ?? 0) }},
+                            resources shown in preview: {{ (int) ($preview['resources_shown'] ?? 0) }}
                         </td>
                     </tr>
                     </tbody>
