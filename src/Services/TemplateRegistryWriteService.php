@@ -31,9 +31,13 @@ class TemplateRegistryWriteService
             throw new RuntimeException('Required field "name" is empty.');
         }
 
-        $alias = trim((string) ($input['alias'] ?? $input['templatealias'] ?? Str::slug($name)));
+        $hasExplicitAlias = array_key_exists('alias', $input) || array_key_exists('templatealias', $input);
+        $alias = $hasExplicitAlias
+            ? trim((string) ($input['alias'] ?? $input['templatealias'] ?? ''))
+            : $this->generateTemplateAlias($table, $name);
+
         if ($alias === '') {
-            $alias = 'template-' . time();
+            throw new RuntimeException('Required field "alias" is empty.');
         }
 
         if (isset($columns['templatename']) && $this->valueExists($table, 'templatename', $name)) {
@@ -912,6 +916,53 @@ class TemplateRegistryWriteService
         $parts = array_values(array_filter(explode('\\', $normalized), static fn (string $part): bool => $part !== ''));
 
         return $parts === [] ? '' : (string) end($parts);
+    }
+
+    private function generateTemplateAlias(string $table, string $name): string
+    {
+        $base = $this->normalizeAliasBase($name);
+        if ($base === '') {
+            $base = 'template-' . substr(md5($name), 0, 12);
+        }
+
+        return $this->nextUniqueValue($table, 'templatealias', $base);
+    }
+
+    private function normalizeAliasBase(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $ascii = trim(Str::ascii($value));
+        $slug = trim((string) Str::slug($ascii !== '' ? $ascii : $value, '-'));
+        if ($slug !== '') {
+            return $slug;
+        }
+
+        $transliterated = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+        if (is_string($transliterated) && trim($transliterated) !== '') {
+            return trim((string) Str::slug($transliterated, '-'));
+        }
+
+        return '';
+    }
+
+    private function nextUniqueValue(string $table, string $column, string $base): string
+    {
+        if (!Schema::hasColumn($table, $column)) {
+            return $base;
+        }
+
+        $candidate = $base;
+        $suffix = 2;
+        while (DB::table($table)->where($column, $candidate)->exists()) {
+            $candidate = $base . '-' . $suffix;
+            $suffix++;
+        }
+
+        return $candidate;
     }
 
     private function resolveTableName(string $base): ?string

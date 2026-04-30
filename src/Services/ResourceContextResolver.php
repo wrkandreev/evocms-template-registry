@@ -148,6 +148,21 @@ class ResourceContextResolver
         return $this->mapResourceRows($rows, $templatesById);
     }
 
+    public function countResources(bool $includeDeleted = false): int
+    {
+        $contentTable = $this->resolveTableName((string) $this->cfg('resources_table', 'site_content'));
+        if ($contentTable === null) {
+            throw new RuntimeException('Required resource table not found (site_content).');
+        }
+
+        $query = DB::table($contentTable);
+        if (!$includeDeleted && Schema::hasColumn($contentTable, 'deleted')) {
+            $query->where('deleted', 0);
+        }
+
+        return (int) $query->count();
+    }
+
     /** @param array<string,mixed> $payload @return array<string,mixed>|null */
     public function resourceById(array $payload, int $resourceId, bool $includeDeleted = false): ?array
     {
@@ -206,6 +221,25 @@ class ResourceContextResolver
         $rows = $query->get();
 
         return $this->mapResourceRows($rows, $this->templatesById($payload));
+    }
+
+    public function countChildResources(int $parentId, bool $includeDeleted = false): int
+    {
+        if ($parentId <= 0) {
+            return 0;
+        }
+
+        $contentTable = $this->resolveTableName((string) $this->cfg('resources_table', 'site_content'));
+        if ($contentTable === null) {
+            throw new RuntimeException('Required resource table not found (site_content).');
+        }
+
+        $query = DB::table($contentTable)->where('parent', $parentId);
+        if (!$includeDeleted && Schema::hasColumn($contentTable, 'deleted')) {
+            $query->where('deleted', 0);
+        }
+
+        return (int) $query->count();
     }
 
     /** @param array<string,mixed> $payload @return array<int,array<string,mixed>> */

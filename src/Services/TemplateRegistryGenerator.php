@@ -124,6 +124,15 @@ class TemplateRegistryGenerator
             ];
         }
 
+        foreach ($this->loadAllTvs($tvsTable, $tvColumns) as $tv) {
+            $tvId = (int) ($tv['id'] ?? 0);
+            if ($tvId <= 0) {
+                continue;
+            }
+
+            $tvCatalog[$tvId] = $tv;
+        }
+
         ksort($tvCatalog);
         $tvCatalog = array_values($tvCatalog);
         $stats['unique_tvs'] = count($tvCatalog);
@@ -364,6 +373,44 @@ class TemplateRegistryGenerator
 
             if ($hasRank) {
                 $item['rank'] = isset($row->rank) ? (int) $row->rank : null;
+            }
+
+            $result[] = $item;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<int,string> $tvColumns
+     * @return array<int,array<string,mixed>>
+     */
+    private function loadAllTvs(string $tvTable, array $tvColumns): array
+    {
+        $hasDefaultText = in_array('default_text', $tvColumns, true);
+
+        $query = DB::table($tvTable)
+            ->select(['id', 'name', 'caption', 'type', 'elements'])
+            ->orderBy('id');
+
+        if ($hasDefaultText) {
+            $query->addSelect('default_text');
+        }
+
+        $rows = $query->get();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $item = [
+                'id' => (int) ($row->id ?? 0),
+                'name' => (string) ($row->name ?? ''),
+                'caption' => (string) ($row->caption ?? ''),
+                'type' => (string) ($row->type ?? ''),
+                'elements' => (string) ($row->elements ?? ''),
+            ];
+
+            if ($hasDefaultText) {
+                $item['default_text'] = (string) ($row->default_text ?? '');
             }
 
             $result[] = $item;

@@ -225,6 +225,15 @@ Optional single-template filter:
 
 - `GET /api/template-registry?template_id=12`
 
+Resource list query options:
+
+- `GET /api/template-registry/resources?limit=100`
+- `GET /api/template-registry/resources?per_page=500`
+- `GET /api/template-registry/resources?all=1`
+- `GET /api/template-registry/resources?include_deleted=1`
+- `GET /api/template-registry/resources?include_meta=1`
+- `GET /api/template-registry/resources/{id}/children?include_meta=1`
+
 Resource context for local AI/tools:
 
 - `GET /api/template-registry/resource-resolve?url=/path/to/resource`
@@ -240,8 +249,18 @@ Resource context for local AI/tools:
 `blang/fields` mutates `blang_tmplvars` and `blang_tmplvar_templates`, then syncs localized TVs in `site_tmplvars`.
 `blang/settings` mutates `blang_settings`, adds missing language columns in `blang`, then re-syncs localized TVs when language model changes.
 
+`tvs` returns the full TV catalog from `site_tmplvars`, including TVs not yet attached to any template.
+
 `resources` returns created resources with template meta and key system fields useful for admin/tooling context.
 Deleted resources are excluded by default; use `include_deleted=1` when you need the full list including soft-deleted items.
+Default list limit is `100`; `limit` and `per_page` are capped at `500` unless `all=1` is used.
+When `include_meta=1` is passed, list endpoints return `{items, meta}`.
+Without `include_meta`, list endpoints still return a plain array and expose pagination visibility via headers:
+
+- `X-Template-Registry-Total`
+- `X-Template-Registry-Returned`
+- `X-Template-Registry-Limit`
+- `X-Template-Registry-Has-More`
 
 `resource-resolve` returns stable `resource_id` by URL/id with `matched_by` diagnostics.
 Use this endpoint first when you only have URL and need reliable resource id.

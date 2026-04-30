@@ -82,11 +82,12 @@ class TemplateRegistryApiController
             $payload = $this->payload();
             $config = (array) \config('template-registry', []);
             $resolver = new ResourceContextResolver($config);
-            $limit = (int) $request->query('limit', 100);
-            $limit = max(1, min($limit, 500));
+            $limit = $this->resolveResourceLimit($request, $resolver, false);
             $includeDeleted = filter_var($request->query('include_deleted', false), FILTER_VALIDATE_BOOL);
+            $items = $resolver->listResources($payload, $limit, $includeDeleted);
+            $total = $resolver->countResources($includeDeleted);
 
-            return \response()->json($resolver->listResources($payload, $limit, $includeDeleted));
+            return $this->resourceListResponse($items, $total, $limit, $request);
         } catch (RuntimeException $e) {
             return $this->errorResponse($e->getMessage());
         }
@@ -119,15 +120,15 @@ class TemplateRegistryApiController
             $payload = $this->payload();
             $config = (array) \config('template-registry', []);
             $resolver = new ResourceContextResolver($config);
-            $limit = (int) $request->query('limit', 100);
-            $limit = max(1, min($limit, 500));
+            $limit = $this->resolveResourceLimit($request, $resolver, true, $id);
             $includeDeleted = filter_var($request->query('include_deleted', false), FILTER_VALIDATE_BOOL);
             $resources = $resolver->childResources($payload, $id, $limit, $includeDeleted);
+            $total = $resolver->countChildResources($id, $includeDeleted);
         } catch (RuntimeException $e) {
             return $this->errorResponse($e->getMessage());
         }
 
-        return \response()->json($resources);
+        return $this->resourceListResponse($resources, $total, $limit, $request);
     }
 
     public function stats()
@@ -260,5 +261,47 @@ class TemplateRegistryApiController
             'message' => $message,
             'code' => 'registry_unavailable',
         ], 503);
+    }
+
+    private function resolveResourceLimit(Request $request, ResourceContextResolver $resolver, bool $childrenOnly = false, int $parentId = 0): int
+    {
+        $includeDeleted = filter_var($request->query('include_deleted', false), FILTER_VALIDATE_BOOL);
+        $all = filter_var($request->query('all', false), FILTER_VALIDATE_BOOL);
+
+        if ($all) {
+            return $childrenOnly
+                ? max(1, $resolver->countChildResources($parentId, $includeDeleted))
+                : max(1, $resolver->countResources($includeDeleted));
+        }
+
+        $rawLimit = $request->query('limit', $request->query('per_page', 100));
+
+        return max(1, min((int) $rawLimit, 500));
+    }
+
+    /** @param array<int,array<string,mixed>> $items */
+    private function resourceListResponse(array $items, int $total, int $limit, Request $request)
+    {
+        $returned = count($items);
+        $meta = [
+            'total' => $total,
+            'returned' => $returned,
+            'limit' => $limit,
+            'has_more' => $total > $returned,
+        ];
+
+        if (filter_var($request->query('include_meta', false), FILTER_VALIDATE_BOOL)) {
+            return \response()->json([
+                'items' => $items,
+                'meta' => $meta,
+            ]);
+        }
+
+        return \response()
+            ->json($items)
+            ->header('X-Template-Registry-Total', (string) $total)
+            ->header('X-Template-Registry-Returned', (string) $returned)
+            ->header('X-Template-Registry-Limit', (string) $limit)
+            ->header('X-Template-Registry-Has-More', $meta['has_more'] ? '1' : '0');
     }
 }

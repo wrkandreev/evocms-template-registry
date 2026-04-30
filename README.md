@@ -302,9 +302,10 @@ Migration command failures print the same code in CLI output, for example:
 - `GET /api/template-registry` полный payload
 - `GET /api/template-registry/templates` только шаблоны
 - `GET /api/template-registry/templates/{id}` один шаблон по id
-- `GET /api/template-registry/tvs` только каталог TV
+- `GET /api/template-registry/tvs` полный каталог TV из системы, включая TV без привязки к шаблонам
 - `GET /api/template-registry/resources` список ресурсов с template meta и основными системными полями
   По умолчанию удалённые ресурсы скрыты. Для полного списка используйте `include_deleted=1`.
+  По умолчанию выдача ограничена `100` записями. Поддерживаются `limit`, `per_page`, `all=1` и `include_meta=1`.
 - `GET /api/template-registry/resources/{id}` один ресурс по id
 - `GET /api/template-registry/resources/{id}/children` дети ресурса по id родителя
 - `GET /api/template-registry/stats` только статистика
@@ -334,13 +335,32 @@ Migration command failures print the same code in CLI output, for example:
 
 - `GET /api/template-registry?template_id=12` один шаблон через query
 - `GET /api/template-registry/resources?limit=100`
+- `GET /api/template-registry/resources?per_page=500`
+- `GET /api/template-registry/resources?all=1`
+- `GET /api/template-registry/resources?include_meta=1`
 - `GET /api/template-registry/resources?include_deleted=1`
 - `GET /api/template-registry/resources/7`
 - `GET /api/template-registry/resources/7/children`
+- `GET /api/template-registry/resources/7/children?include_meta=1`
 - `GET /api/template-registry/resource-resolve?url=/kontakty.html`
 - `GET /api/template-registry/resource-resolve?resource_id=123`
 - `GET /api/template-registry/resource-context?url=/catalog/iphone-15`
 - `GET /api/template-registry/resource-context?resource_id=123`
+
+`GET /api/template-registry/resources` и `GET /api/template-registry/resources/{id}/children` поддерживают:
+
+- `limit` лимит записей, максимум `500`
+- `per_page` алиас для `limit`
+- `all=1` вернуть все записи без ручного расчета лимита
+- `include_deleted=1` включить soft-deleted ресурсы
+- `include_meta=1` вернуть объект `{items, meta}` вместо голого массива
+
+Если `include_meta` не указан, ответ остается массивом как раньше, но дополнительно отдаются headers:
+
+- `X-Template-Registry-Total`
+- `X-Template-Registry-Returned`
+- `X-Template-Registry-Limit`
+- `X-Template-Registry-Has-More`
 
 `resource-resolve` возвращает:
 
@@ -387,7 +407,7 @@ Migration command failures print the same code in CLI output, for example:
 Поля payload:
 
 - `templates[]` с `controller`, `view`, `tv_refs`, `flags`
-- `tv_catalog[]` для дедуплицированного каталога TV
+- `tv_catalog[]` для полного каталога TV из системы, включая TV без template links
 - `client_settings` присутствует всегда (объект; данные модуля опциональны)
 - `blang` присутствует всегда (объект; данные модуля опциональны)
 - `system_features` показывает наличие связанных модулей/расширений
