@@ -54,6 +54,7 @@ Route::prefix($apiPrefix)
         Route::get('/templates', [TemplateRegistryApiController::class, 'templates']);
         Route::get('/templates/{id}', [TemplateRegistryApiController::class, 'templateById'])->where('id', '[0-9]+');
         Route::get('/tvs', [TemplateRegistryApiController::class, 'tvCatalog']);
+        Route::get('/client-settings', [TemplateRegistryApiController::class, 'clientSettings']);
         Route::get('/resources', [TemplateRegistryApiController::class, 'resources']);
         Route::get('/resources/{id}', [TemplateRegistryApiController::class, 'resourceById'])->where('id', '[0-9]+');
         Route::get('/resources/{id}/children', [TemplateRegistryApiController::class, 'resourceChildren'])->where('id', '[0-9]+');
@@ -79,6 +80,7 @@ Route::prefix($apiPrefix)
         Route::post('/tvs', [TemplateRegistryWriteApiController::class, 'createTv']);
         Route::patch('/tvs/{tvId}', [TemplateRegistryWriteApiController::class, 'updateTv'])->where('tvId', '[0-9]+');
         Route::delete('/tvs/{tvId}', [TemplateRegistryWriteApiController::class, 'deleteTv'])->where('tvId', '[0-9]+');
+        Route::patch('/client-settings', [TemplateRegistryWriteApiController::class, 'updateClientSettings']);
         Route::post('/resources', [TemplateRegistryWriteApiController::class, 'createResource']);
         Route::patch('/resources/{resourceId}', [TemplateRegistryWriteApiController::class, 'updateResource'])->where('resourceId', '[0-9]+');
         Route::delete('/resources/{resourceId}', [TemplateRegistryWriteApiController::class, 'deleteResource'])->where('resourceId', '[0-9]+');

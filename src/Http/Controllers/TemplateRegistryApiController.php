@@ -76,6 +76,15 @@ class TemplateRegistryApiController
         }
     }
 
+    public function clientSettings()
+    {
+        try {
+            return \response()->json((array) ($this->payload()['client_settings'] ?? []));
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+    }
+
     public function resources(Request $request)
     {
         try {

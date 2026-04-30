@@ -303,6 +303,7 @@ Migration command failures print the same code in CLI output, for example:
 - `GET /api/template-registry/templates` только шаблоны
 - `GET /api/template-registry/templates/{id}` один шаблон по id
 - `GET /api/template-registry/tvs` полный каталог TV из системы, включая TV без привязки к шаблонам
+- `GET /api/template-registry/client-settings` текущая runtime-схема и значения ClientSettings
 - `GET /api/template-registry/resources` список ресурсов с template meta и основными системными полями
   По умолчанию удалённые ресурсы скрыты. Для полного списка используйте `include_deleted=1`.
   По умолчанию выдача ограничена `100` записями. Поддерживаются `limit`, `per_page`, `all=1` и `include_meta=1`.
@@ -321,6 +322,7 @@ Migration command failures print the same code in CLI output, for example:
 - `POST /api/template-registry/tvs` создать TV
 - `PATCH /api/template-registry/tvs/{tvId}` обновить TV
 - `DELETE /api/template-registry/tvs/{tvId}` удалить TV вместе со связями и значениями
+- `PATCH /api/template-registry/client-settings` обновить значения ClientSettings только для полей из текущей runtime-схемы
 - `POST /api/template-registry/resources` создать ресурс
 - `PATCH /api/template-registry/resources/{resourceId}` обновить ресурс
 - `DELETE /api/template-registry/resources/{resourceId}` пометить ресурс удалённым
@@ -361,6 +363,29 @@ Migration command failures print the same code in CLI output, for example:
 - `X-Template-Registry-Returned`
 - `X-Template-Registry-Limit`
 - `X-Template-Registry-Has-More`
+
+`GET /api/template-registry/client-settings` возвращает нормализованную runtime-схему ClientSettings с вычисленным `setting_name`, `resolved_prefix`, `writable` и текущими значениями.
+
+`PATCH /api/template-registry/client-settings` принимает только поля из `client_settings.fields_catalog`.
+
+Пример:
+
+```json
+{
+  "values": {
+    "phone": "+7 999 000-00-00",
+    "email": "hello@example.com",
+    "footer_text": "Новый текст в футере"
+  }
+}
+```
+
+Сервис сам:
+
+- находит точный `setting_name` для поля
+- пишет значение в `system_settings`
+- повторяет события `OnBeforeClientSettingsSave`, `OnDocFormSave`, `OnClientSettingsSave`
+- очищает cache
 
 `resource-resolve` возвращает:
 
@@ -514,6 +539,7 @@ Migration command failures print the same code in CLI output, for example:
   },
   "client_settings": {
     "exists": false,
+    "resolved_prefix": "client_",
     "tabs": [],
     "fields_catalog": [],
     "stats": {
@@ -526,7 +552,9 @@ Migration command failures print the same code in CLI output, for example:
       "selector_controllers_found": 0,
       "selector_controllers_missing": 0,
       "selector_controllers_dir_exists": false,
-      "values_table_exists": false
+      "values_table_exists": false,
+      "writable_fields_total": 0,
+      "duplicate_field_names_total": 0
     }
   },
   "stats": {
@@ -547,6 +575,8 @@ ClientSettings не является обязательным.
 - Если `assets/modules/clientsettings/config` не существует: payload остается валидным и `client_settings.exists=false`.
 - Tab-конфиги загружаются безопасно; невалидные/битые файлы увеличивают `client_settings.stats.tabs_invalid` и не ломают API/команду.
 - Пакет поддерживает структуру ClientSettings с ключом `settings` и подхватывает текущие значения из `system_settings`.
+- Для write API пакет вычисляет `setting_name` по runtime-схеме и разрешает запись только в поля, найденные в `fields_catalog`.
+- Если значение поля в `system_settings` ещё не существует, пакет использует вычисленный `resolved_prefix`; при необходимости его можно зафиксировать через `client_settings.write_prefix` в конфиге пакета.
 - Для selector-полей (`customtv:selector`) пакет пытается обогатить метаданные контроллера из `assets/tvs/selector/lib/*.controller.class.php`.
 - Отсутствующие файлы selector-контроллеров не являются фатальной ошибкой (`controller_exists=false`).
 

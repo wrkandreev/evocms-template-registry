@@ -137,7 +137,7 @@ class TemplateRegistryGenerator
         $tvCatalog = array_values($tvCatalog);
         $stats['unique_tvs'] = count($tvCatalog);
 
-        $clientSettings = (new ClientSettingsExtractor($this->config, $this->projectRootPath()))->extract();
+        $clientSettings = (new ClientSettingsSchemaService($this->config, $this->projectRootPath()))->extract();
         $blang = (new BLangExtractor($this->config, $this->projectRootPath()))->extract();
         $systemFeatures = (new SystemFeaturesDetector($this->config, $this->projectRootPath()))->detect();
 

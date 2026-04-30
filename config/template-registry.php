@@ -43,6 +43,7 @@ return [
         'class_file' => 'assets/modules/clientsettings/core/src/ClientSettings.php',
         'settings_table' => 'system_settings',
         'setting_prefixes' => ['client_', 'default_', ''],
+        'write_prefix' => '',
     ],
 
     'multitv' => [

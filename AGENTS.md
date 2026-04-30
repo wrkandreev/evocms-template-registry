@@ -183,6 +183,7 @@ Default prefix: `/api/template-registry`
 - `GET /api/template-registry/templates`
 - `GET /api/template-registry/templates/{id}`
 - `GET /api/template-registry/tvs`
+- `GET /api/template-registry/client-settings`
 - `GET /api/template-registry/resources`
 - `GET /api/template-registry/resources/{id}`
 - `GET /api/template-registry/resources/{id}/children`
@@ -200,6 +201,7 @@ Default prefix: `/api/template-registry`
 - `POST /api/template-registry/tvs`
 - `PATCH /api/template-registry/tvs/{tvId}`
 - `DELETE /api/template-registry/tvs/{tvId}`
+- `PATCH /api/template-registry/client-settings`
 - `POST /api/template-registry/resources`
 - `PATCH /api/template-registry/resources/{resourceId}`
 - `DELETE /api/template-registry/resources/{resourceId}`
@@ -251,6 +253,10 @@ Resource context for local AI/tools:
 
 `tvs` returns the full TV catalog from `site_tmplvars`, including TVs not yet attached to any template.
 
+`client-settings` returns normalized ClientSettings runtime schema and current values.
+Write access is schema-bound: `PATCH /client-settings` may update only fields present in `client_settings.fields_catalog`.
+The package resolves `setting_name` automatically, writes to `system_settings`, invokes `OnBeforeClientSettingsSave`, `OnDocFormSave`, `OnClientSettingsSave`, and clears cache.
+
 `resources` returns created resources with template meta and key system fields useful for admin/tooling context.
 Deleted resources are excluded by default; use `include_deleted=1` when you need the full list including soft-deleted items.
 Default list limit is `100`; `limit` and `per_page` are capped at `500` unless `all=1` is used.
@@ -296,6 +302,7 @@ Access is protected by middleware:
 - `api.write_access_token` optional write token (header: `X-Template-Registry-Write-Token`)
 - `api.regenerate_after_write` rewrite generated registry files after successful write operation
 - `api.admin_prefix` module page prefix (default `template-registry-admin`)
+- `client_settings.write_prefix` optional fallback prefix for new ClientSettings values when it cannot be inferred from existing `system_settings`
 
 ### Runtime state file
 
@@ -320,6 +327,8 @@ Rules:
 - If config directory is absent: `client_settings.exists=false`, empty `tabs` and `fields_catalog`.
 - Read fields from ClientSettings tab config (`settings` key is primary).
 - Enrich fields with current values from `system_settings` using configured prefixes.
+- Expose computed `setting_name`, `resolved_prefix`, `writable` and duplicate-name diagnostics in normalized ClientSettings schema.
+- Write API must only update fields present in normalized runtime schema; never accept arbitrary `setting_name` from caller.
 - Invalid/broken tab configs must not break generation/API.
 - Selector controller enrichment is best-effort. Missing file/controller is non-fatal.
 
@@ -335,9 +344,10 @@ Registry payload must include:
 `client_settings` shape:
 
 - `exists` (bool)
+- `resolved_prefix` (string)
 - `tabs` (array)
 - `fields_catalog` (array)
-- `stats` with tabs/fields/selector counters
+- `stats` with tabs/fields/selector counters and writable/duplicate diagnostics
 
 `system_features` shape:
 

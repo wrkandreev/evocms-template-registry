@@ -11,6 +11,7 @@ use WrkAndreev\EvocmsTemplateRegistry\Services\BLangFieldService;
 use WrkAndreev\EvocmsTemplateRegistry\Services\BLangHealthService;
 use WrkAndreev\EvocmsTemplateRegistry\Services\BLangLexiconService;
 use WrkAndreev\EvocmsTemplateRegistry\Services\BLangSettingsService;
+use WrkAndreev\EvocmsTemplateRegistry\Services\ClientSettingsWriteService;
 use WrkAndreev\EvocmsTemplateRegistry\Support\TemplateRegistryErrorMapper;
 use WrkAndreev\EvocmsTemplateRegistry\Services\TemplateRegistryWriteService;
 
@@ -35,6 +36,13 @@ class TemplateRegistryWriteApiController
         return $this->handle(function (TemplateRegistryWriteService $service) use ($request) {
             return $service->createResource((array) $request->all());
         }, 201);
+    }
+
+    public function updateClientSettings(Request $request)
+    {
+        return $this->handleClientSettings(function (ClientSettingsWriteService $service) use ($request) {
+            return $service->updateValues((array) $request->all());
+        });
     }
 
     public function attachTvToTemplate(int $templateId, int $tvId, Request $request)
@@ -297,6 +305,25 @@ class TemplateRegistryWriteApiController
     {
         try {
             $service = new BLangHealthService((array) \config('template-registry', []));
+            $result = $callback($service);
+        } catch (RuntimeException $e) {
+            $mapped = (new TemplateRegistryErrorMapper())->map($e->getMessage());
+            return \response()->json([
+                'ok' => false,
+                'code' => $mapped['code'],
+                'message' => $e->getMessage(),
+            ], $mapped['status']);
+        }
+
+        return \response()->json([
+            'ok' => true,
+        ] + $result, $successStatus);
+    }
+
+    private function handleClientSettings(callable $callback, int $successStatus = 200)
+    {
+        try {
+            $service = new ClientSettingsWriteService((array) \config('template-registry', []));
             $result = $callback($service);
         } catch (RuntimeException $e) {
             $mapped = (new TemplateRegistryErrorMapper())->map($e->getMessage());
