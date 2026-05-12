@@ -89,7 +89,9 @@ Route::prefix($apiPrefix)
         Route::delete('/templates/{templateId}/tvs/{tvId}', [TemplateRegistryWriteApiController::class, 'detachTvFromTemplate'])->where(['templateId' => '[0-9]+', 'tvId' => '[0-9]+']);
         Route::put('/resources/{resourceId}/template', [TemplateRegistryWriteApiController::class, 'setResourceTemplate'])->where('resourceId', '[0-9]+');
         Route::put('/resources/{resourceId}/published', [TemplateRegistryWriteApiController::class, 'setResourcePublished'])->where('resourceId', '[0-9]+');
+        Route::put('/resources/{resourceId}/tv-values', [TemplateRegistryWriteApiController::class, 'setResourceTvValues'])->where('resourceId', '[0-9]+');
         Route::put('/resources/{resourceId}/tv-values/{tvId}', [TemplateRegistryWriteApiController::class, 'setResourceTvValue'])->where(['resourceId' => '[0-9]+', 'tvId' => '[0-9]+']);
+        Route::post('/cache/blade/clear', [TemplateRegistryWriteApiController::class, 'clearBladeCache']);
         Route::patch('/resources/{resourceId}/blang-fields', [TemplateRegistryWriteApiController::class, 'setResourceBLangFields'])->where('resourceId', '[0-9]+');
         Route::post('/blang/lexicon', [TemplateRegistryWriteApiController::class, 'createBLangLexiconEntry']);
         Route::post('/blang/fields', [TemplateRegistryWriteApiController::class, 'createBLangField']);

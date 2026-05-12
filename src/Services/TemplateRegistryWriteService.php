@@ -76,6 +76,7 @@ class TemplateRegistryWriteService
             'id' => (int) $id,
             'message' => 'Template created.',
             'regenerated' => $regenerated,
+            'warnings' => $this->buildTemplateWarnings((int) $id),
         ];
     }
 
@@ -147,7 +148,55 @@ class TemplateRegistryWriteService
             'id' => $templateId,
             'message' => 'Template updated.',
             'regenerated' => $regenerated,
+            'warnings' => $this->buildTemplateWarnings($templateId),
         ];
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    private function buildTemplateWarnings(int $templateId): array
+    {
+        try {
+            $payload = (new TemplateRegistryGenerator($this->config))->buildPayload();
+        } catch (RuntimeException) {
+            return [];
+        }
+
+        foreach ((array) ($payload['templates'] ?? []) as $template) {
+            if (!is_array($template) || (int) ($template['id'] ?? 0) !== $templateId) {
+                continue;
+            }
+
+            $warnings = [];
+            $controller = (array) ($template['controller'] ?? []);
+            if (!empty($template['flags']['missing_controller'])) {
+                $warnings[] = [
+                    'code' => 'controller_missing',
+                    'severity' => 'warning',
+                    'message' => 'Expected controller file was not found.',
+                    'class' => (string) ($controller['class'] ?? ''),
+                    'path' => $controller['path'] ?? null,
+                    'source' => (string) ($controller['source'] ?? ''),
+                    'hint' => 'Create the controller file or adjust the template controller value.',
+                ];
+            }
+
+            $view = (array) ($template['view'] ?? []);
+            if (!empty($template['flags']['missing_view'])) {
+                $warnings[] = [
+                    'code' => 'view_missing',
+                    'severity' => 'warning',
+                    'message' => 'Expected Blade view was not found.',
+                    'name' => (string) ($view['name'] ?? ''),
+                    'path' => $view['path'] ?? null,
+                    'source' => (string) ($view['source'] ?? ''),
+                    'hint' => 'Create the Blade view file or adjust the template view value.',
+                ];
+            }
+
+            return $warnings;
+        }
+
+        return [];
     }
 
     /** @return array<string,mixed> */
@@ -662,6 +711,72 @@ class TemplateRegistryWriteService
     }
 
     /** @param array<string,mixed> $input @return array<string,mixed> */
+    public function setResourceTvValues(int $resourceId, array $input): array
+    {
+        $values = isset($input['values']) && is_array($input['values']) ? $input['values'] : $input;
+        if (!is_array($values) || $values === []) {
+            throw new RuntimeException('No TV values provided for update.');
+        }
+
+        $updatedTvIds = [];
+        DB::transaction(function () use ($resourceId, $values, &$updatedTvIds): void {
+            foreach ($values as $tvReference => $value) {
+                $tvId = $this->resolveTvId($tvReference);
+                $this->setResourceTvValueInternal($resourceId, $tvId, $value);
+                $updatedTvIds[] = $tvId;
+            }
+        });
+
+        $regenerated = $this->regenerateRegistryIfNeeded();
+
+        return [
+            'entity' => 'tv_values',
+            'message' => 'TV values saved for resource.',
+            'resource_id' => $resourceId,
+            'updated_tv_ids' => array_values(array_unique(array_map('intval', $updatedTvIds))),
+            'regenerated' => $regenerated,
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    public function clearBladeCache(): array
+    {
+        $directory = rtrim($this->toAbsolutePath('core/storage/blade'), '/');
+        if ($directory === '' || !is_dir($directory)) {
+            return [
+                'entity' => 'blade_cache',
+                'message' => 'Blade cache directory does not exist.',
+                'path' => 'core/storage/blade',
+                'deleted' => 0,
+                'failed' => [],
+            ];
+        }
+
+        $deleted = 0;
+        $failed = [];
+        foreach ((array) glob($directory . '/*.php') as $file) {
+            if (!is_string($file) || !is_file($file)) {
+                continue;
+            }
+
+            if (@unlink($file)) {
+                $deleted++;
+                continue;
+            }
+
+            $failed[] = 'core/storage/blade/' . basename($file);
+        }
+
+        return [
+            'entity' => 'blade_cache',
+            'message' => 'Blade cache cleared.',
+            'path' => 'core/storage/blade',
+            'deleted' => $deleted,
+            'failed' => $failed,
+        ];
+    }
+
+    /** @param array<string,mixed> $input @return array<string,mixed> */
     public function setResourceBLangFieldValues(int $resourceId, array $input): array
     {
         $contentTable = $this->requireTable('resources_table', 'site_content');
@@ -792,6 +907,33 @@ class TemplateRegistryWriteService
                 'value' => is_scalar($value) || $value === null ? (string) ($value ?? '') : json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             ]
         );
+    }
+
+    private function resolveTvId(int|string $reference): int
+    {
+        $reference = is_int($reference) ? (string) $reference : trim($reference);
+        if ($reference === '') {
+            throw new RuntimeException('TV reference is empty.');
+        }
+
+        if (ctype_digit($reference)) {
+            return (int) $reference;
+        }
+
+        $tvsTable = $this->requireTable('tvs_table', 'site_tmplvars');
+        if (!Schema::hasColumn($tvsTable, 'name')) {
+            throw new RuntimeException('TV name lookup is not supported by current TV table.');
+        }
+
+        $matches = DB::table($tvsTable)->where('name', $reference)->pluck('id')->all();
+        if ($matches === []) {
+            throw new RuntimeException('TV not found by name: ' . $reference);
+        }
+        if (count($matches) > 1) {
+            throw new RuntimeException('TV name is ambiguous: ' . $reference);
+        }
+
+        return (int) $matches[0];
     }
 
     private function regenerateRegistryIfNeeded(): bool

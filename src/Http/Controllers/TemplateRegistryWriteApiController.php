@@ -73,6 +73,20 @@ class TemplateRegistryWriteApiController
         });
     }
 
+    public function setResourceTvValues(int $resourceId, Request $request)
+    {
+        return $this->handle(function (TemplateRegistryWriteService $service) use ($resourceId, $request) {
+            return $service->setResourceTvValues($resourceId, (array) $request->all());
+        });
+    }
+
+    public function clearBladeCache()
+    {
+        return $this->handle(function (TemplateRegistryWriteService $service) {
+            return $service->clearBladeCache();
+        });
+    }
+
     public function setResourcePublished(int $resourceId, Request $request)
     {
         return $this->handle(function (TemplateRegistryWriteService $service) use ($resourceId, $request) {

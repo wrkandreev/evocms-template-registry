@@ -331,7 +331,13 @@ Migration command failures print the same code in CLI output, for example:
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}` отвязать TV от шаблона
 - `PUT /api/template-registry/resources/{resourceId}/template` сменить шаблон ресурса
 - `PUT /api/template-registry/resources/{resourceId}/published` опубликовать или снять с публикации ресурс
+- `PUT /api/template-registry/resources/{resourceId}/tv-values` атомарно сохранить несколько TV values для ресурса
 - `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}` сохранить значение TV для ресурса
+- `POST /api/template-registry/cache/blade/clear` очистить только скомпилированный Blade cache (`core/storage/blade/*.php`)
+
+`POST /api/template-registry/templates` и `PATCH /api/template-registry/templates/{templateId}` возвращают массив `warnings`.
+Если ожидаемые по конвенции controller/view не найдены, API не отклоняет операцию, но возвращает диагностические записи `controller_missing` и/или `view_missing` с ожидаемыми `class`, `name`, `path`, `source` и `hint`.
+Эти warning-и используют ту же логику резолва, что и generated registry flags.
 
 Опциональные фильтры:
 
@@ -825,7 +831,9 @@ Write-contract для локализованных значений ресурс
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `PUT /api/template-registry/resources/{resourceId}/template`
 - `PUT /api/template-registry/resources/{resourceId}/published`
+- `PUT /api/template-registry/resources/{resourceId}/tv-values`
 - `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}`
+- `POST /api/template-registry/cache/blade/clear`
 
 ### PageBuilder configs API
 
@@ -879,6 +887,21 @@ Write API выключен по умолчанию.
 ```
 
 When a resource is created under a parent (`parent > 0`), write API automatically marks that parent as `isfolder=1` so the child is visible in Evolution tree.
+
+Bulk TV values update accepts TV ids and unique TV names as keys and regenerates registry once after the whole batch succeeds:
+
+```json
+{
+  "values": {
+    "15": "Hero title from API",
+    "hero_subtitle": "Subtitle from API"
+  }
+}
+```
+
+The operation is atomic: an invalid TV id/name or a TV not attached to the resource template rejects the whole batch.
+
+`POST /api/template-registry/cache/blade/clear` is write-protected and removes only `core/storage/blade/*.php` files. It returns `deleted` count and `failed` relative paths.
 
 ```json
 {

@@ -221,7 +221,17 @@ Default prefix: `/api/template-registry`
 - `DELETE /api/template-registry/templates/{templateId}/tvs/{tvId}`
 - `PUT /api/template-registry/resources/{resourceId}/template`
 - `PUT /api/template-registry/resources/{resourceId}/published`
+- `PUT /api/template-registry/resources/{resourceId}/tv-values`
 - `PUT /api/template-registry/resources/{resourceId}/tv-values/{tvId}`
+- `POST /api/template-registry/cache/blade/clear`
+
+`POST /templates` and `PATCH /templates/{templateId}` return `warnings` for missing expected template artifacts.
+Warnings are non-fatal and currently include `controller_missing` and `view_missing` with resolved class/name/path/source/hint.
+They are derived from the same registry template diagnostics used by generated payload flags.
+
+`PUT /resources/{resourceId}/tv-values` accepts `{values:{"tvIdOrName": value}}`, resolves keys by numeric TV id or unique TV name, validates each TV is attached to the resource template, writes atomically, and regenerates registry once.
+
+`POST /cache/blade/clear` is write-protected and removes only `core/storage/blade/*.php`, returning deleted count and failed relative paths.
 
 Optional single-template filter:
 
