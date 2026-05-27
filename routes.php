@@ -64,6 +64,7 @@ Route::prefix($apiPrefix)
         Route::get('/blang', [TemplateRegistryApiController::class, 'blang']);
         Route::get('/blang/health', [TemplateRegistryApiController::class, 'blangHealth']);
         Route::get('/blang/lexicon', [TemplateRegistryApiController::class, 'blangLexicon']);
+        Route::get('/agent-manifest', [TemplateRegistryApiController::class, 'agentManifest']);
         Route::get('/pagebuilder-configs', [TemplateRegistryApiController::class, 'pageBuilderConfigs']);
         Route::get('/pagebuilder-configs/{name}', [TemplateRegistryApiController::class, 'pageBuilderConfigByName']);
     });

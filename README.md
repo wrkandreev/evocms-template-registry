@@ -300,6 +300,7 @@ Migration command failures print the same code in CLI output, for example:
 Эндпоинты по умолчанию:
 
 - `GET /api/template-registry` полный payload
+- `GET /api/template-registry/agent-manifest` машинно-читаемая инструкция для AI-агентов (endpoints, auth, recommended flow, safety rules)
 - `GET /api/template-registry/templates` только шаблоны
 - `GET /api/template-registry/templates/{id}` один шаблон по id
 - `GET /api/template-registry/tvs` полный каталог TV из системы, включая TV без привязки к шаблонам
@@ -419,11 +420,11 @@ Migration command failures print the same code in CLI output, for example:
 
 - `GET /template-registry-admin/access`
 
-На этой странице можно включать/выключать доступ к API, менять access token без ручного редактирования конфига и смотреть preview сгенерированных сущностей (templates/TV/resources/ClientSettings).
+На этой странице можно включать/выключать доступ к API, генерировать access token без ручного редактирования конфига и смотреть preview сгенерированных сущностей (templates/TV/resources/ClientSettings).
 Там же отображается состояние плагина автогенерации и кнопки его установки/включения/выключения.
-Для write API там же доступны отдельные настройки: `write_enabled` и `write_access_token`.
+Для write API там же доступны отдельные настройки: `write_enabled` и генерация `write_access_token`.
 Путь можно изменить через `api.admin_prefix`.
-Если токен уже задан в `custom/config/template-registry.php`, модуль покажет текущее значение.
+Сгенерированный токен показывается один раз сразу после сохранения. Если токен уже задан в `custom/config/template-registry.php`, модуль показывает только маску; чтобы получить новое значение, нужно сгенерировать новый токен.
 
 Чтобы зарегистрировать эту страницу как пункт модуля (меню Modules), выполните:
 
@@ -798,6 +799,7 @@ Write-contract для локализованных значений ресурс
 ## API endpoints
 
 - `GET /api/template-registry`
+- `GET /api/template-registry/agent-manifest`
 - `GET /api/template-registry/templates`
 - `GET /api/template-registry/templates/{id}`
 - `GET /api/template-registry/tvs`
@@ -849,6 +851,7 @@ Write API выключен по умолчанию.
 
 - Для включения выставьте `api.write_enabled=true`.
 - Для token-доступа можно передавать `X-Template-Registry-Write-Token`.
+- В manager-модуле write token генерируется и показывается только один раз; повторно его нельзя посмотреть, можно только заменить новым.
 - Если `write_access_token` совпадает с `access_token`, для write-запросов достаточно любого одного из заголовков: `X-Template-Registry-Write-Token` или `X-Template-Registry-Token`.
 - Если `write_access_token` пустой, запись разрешена только из активной manager session.
 - После успешной write-операции пакет по умолчанию регенерирует registry files (`api.regenerate_after_write=true`).

@@ -123,7 +123,7 @@ Validate safe behavior of template registry generation and API with optional Cli
 11. Write API access control
 
 - Open module page and enable `Write API status`.
-- Set `write_access_token` and save settings.
+- Generate `write_access_token`, copy it from the one-time message, then refresh and verify only a mask is shown.
 - Call a write endpoint without manager session and without token: verify `403`.
 - Call the same endpoint with invalid `X-Template-Registry-Write-Token`: verify `403`.
 - Call with valid `X-Template-Registry-Write-Token`: verify request is allowed.

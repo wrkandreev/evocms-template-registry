@@ -10,7 +10,8 @@
         body { background: #f5f5f5; }
         .container.container-body { max-width: 980px; }
         .table.data td:first-child { width: 240px; white-space: nowrap; }
-        .token-input { max-width: 520px; }
+        .token-mask { display: inline-block; min-width: 180px; letter-spacing: 0.16em; }
+        .generated-token { margin-top: 0.75rem; }
         #actions { margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
         #actions .btn-group { display: flex; gap: 0.5rem; }
         .module-tabs { margin-bottom: 1rem; }
@@ -52,6 +53,10 @@
             <i class="fa fa-list"></i>
             <span>Registry preview</span>
         </a>
+        <a class="btn {{ $activeTab === 'guide' ? 'btn-primary' : 'btn-secondary' }}" href="{{ $guideTabUrl }}">
+            <i class="fa fa-book"></i>
+            <span>Guide</span>
+        </a>
     </div>
 
     @if(session('status'))
@@ -62,6 +67,18 @@
     @endif
     @if(session('statusWarning'))
         <div class="alert alert-warning">{{ session('statusWarning') }}</div>
+    @endif
+    @if(session('generatedAccessToken'))
+        <div class="alert alert-warning generated-token">
+            <strong>Read token generated. Copy it now, it will not be shown again.</strong><br>
+            <code class="mono">{{ session('generatedAccessToken') }}</code>
+        </div>
+    @endif
+    @if(session('generatedWriteAccessToken'))
+        <div class="alert alert-warning generated-token">
+            <strong>Write token generated. Copy it now, it will not be shown again.</strong><br>
+            <code class="mono">{{ session('generatedWriteAccessToken') }}</code>
+        </div>
     @endif
 
     @if($activeTab === 'access')
@@ -85,10 +102,18 @@
                         <td><code>{{ $apiPrefix }}</code></td>
                     </tr>
                     <tr>
-                        <td><strong>Token value</strong></td>
+                        <td><strong>Read token</strong></td>
                         <td>
-                            <input class="form-control token-input" id="access_token" name="access_token" type="text" value="{{ $token }}" autocomplete="off" maxlength="512">
-                            <small>Stored in <code>custom/config/template-registry.php</code>.<br>Leave empty to disable token bypass.</small>
+                            @if($token !== '')
+                                <span class="mono token-mask">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</span>
+                            @else
+                                <span>-</span>
+                            @endif
+                            <button class="btn btn-secondary" type="submit" name="generate_access_token" value="1">
+                                <i class="fa fa-refresh"></i>
+                                <span>Generate new</span>
+                            </button>
+                            <small>Header: <code>X-Template-Registry-Token</code>.<br>Generated token is shown only once after saving.</small>
                         </td>
                     </tr>
                     <tr>
@@ -102,10 +127,18 @@
                         </td>
                     </tr>
                     <tr>
-                        <td><strong>Write token value</strong></td>
+                        <td><strong>Write token</strong></td>
                         <td>
-                            <input class="form-control token-input" id="write_access_token" name="write_access_token" type="text" value="{{ $writeToken }}" autocomplete="off" maxlength="512">
-                            <small>Header: <code>X-Template-Registry-Write-Token</code>.<br>Leave empty to allow writes only from active manager session.</small>
+                            @if($writeToken !== '')
+                                <span class="mono token-mask">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</span>
+                            @else
+                                <span>-</span>
+                            @endif
+                            <button class="btn btn-secondary" type="submit" name="generate_write_access_token" value="1" onclick="return confirm('Generate a new write token? The previous write token will stop working.');">
+                                <i class="fa fa-refresh"></i>
+                                <span>Generate new</span>
+                            </button>
+                            <small>Header: <code>X-Template-Registry-Write-Token</code>.<br>Generated token is shown only once after saving.</small>
                         </td>
                     </tr>
                     <tr>
@@ -219,6 +252,91 @@
             @else
                 <div class="alert alert-warning">Preview is unavailable.</div>
             @endif
+        </div>
+
+    @elseif($activeTab === 'guide')
+        <div class="sectionHeader">How to use Template Registry</div>
+        <div class="sectionBody">
+            <p><strong>Template Registry</strong> — это API и генератор реестра для Evolution CMS. Он связывает шаблоны, контроллеры, view-файлы и TV, и даёт HTTP API для чтения и записи.</p>
+
+            <h3 style="margin-top:1.5rem;">1. API access</h3>
+            <p>API по умолчанию требует manager-сессию. Включите/выключите на вкладке <strong>Access</strong>.</p>
+            <p>Для локальных инструментов (CLI, AI-агенты) можно задать токен в поле <strong>Token value</strong> и передавать его в заголовке <code>X-Template-Registry-Token</code>.</p>
+
+            <h3 style="margin-top:1.5rem;">2. Basic read flow</h3>
+            <ol>
+                <li><code>GET /api/template-registry/stats</code> — проверить, что реестр работает</li>
+                <li><code>GET /api/template-registry/templates</code> — посмотреть шаблоны и их TV</li>
+                <li><code>GET /api/template-registry/agent-manifest</code> — полная инструкция для AI-агента</li>
+            </ol>
+            <p>Чтобы получить контекст конкретной страницы:</p>
+            <ol>
+                <li><code>GET /api/template-registry/resource-resolve?url=/o-kompanii</code> — получить ID ресурса по URL</li>
+                <li><code>GET /api/template-registry/resource-context?resource_id=7</code> — полный контекст: мета, шаблон, TV и их значения</li>
+            </ol>
+
+            <h3 style="margin-top:1.5rem;">3. Write API</h3>
+            <p>Write API выключен по умолчанию. Включите на вкладке <strong>Access</strong> (флаг <em>Write API status</em>).</p>
+            <p>Запись доступна из manager-сессии или по заголовку <code>X-Template-Registry-Write-Token</code>.</p>
+            <p>После успешной записи реестр перегенерируется автоматически.</p>
+
+            <h3 style="margin-top:1.5rem;">4. CLI commands</h3>
+            <p>Основные artisan-команды (выполнять из <code>core/</code>):</p>
+            <table class="table data">
+                <tbody>
+                <tr><td>Generate registry files</td><td><code>php artisan template-registry:generate</code></td></tr>
+                <tr><td>Create content migration</td><td><code>php artisan template-registry:migrate:make MigrationName</code></td></tr>
+                <tr><td>Apply migrations</td><td><code>php artisan template-registry:migrate</code></td></tr>
+                <tr><td>Migration status</td><td><code>php artisan template-registry:migrate:status</code></td></tr>
+                <tr><td>Install/remove module</td><td><code>template-registry:module:install / uninstall</code></td></tr>
+                <tr><td>Install/remove plugin</td><td><code>template-registry:plugin:install / uninstall</code></td></tr>
+                <tr><td>Install/remove API routes</td><td><code>template-registry:routes:install / uninstall</code></td></tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin-top:1.5rem;">5. Registry preview</h3>
+            <p>На вкладке <strong>Registry preview</strong> отображается статистика: количество шаблонов, TV, ресурсов, ClientSettings-полей и статус установленных расширений (MultiTV, PageBuilder, bLang и др.).</p>
+
+            <h3 style="margin-top:1.5rem;">6. Auto-generate plugin</h3>
+            <p>Плагин автоматически перегенерирует реестр при сохранении TV или шаблонов в админке. Установите его на вкладке <strong>Access</strong> (кнопка <em>Install plugin</em>) и включите.</p>
+
+            <h3 style="margin-top:1.5rem;">7. Curl examples</h3>
+            <pre class="mono" style="background:#f9f9f9;border:1px solid #ddd;padding:0.75rem;overflow-x:auto;">
+# Полный реестр
+curl {{ $apiPrefix }}/
+
+# Статистика
+curl {{ $apiPrefix }}/stats
+
+# Все шаблоны
+curl {{ $apiPrefix }}/templates
+
+# Инструкция для агента
+curl {{ $apiPrefix }}/agent-manifest
+
+# Ресурс по URL
+curl "{{ $apiPrefix }}/resource-resolve?url=/o-kompanii"
+
+# Контекст страницы
+curl "{{ $apiPrefix }}/resource-context?resource_id=7"
+
+# С токеном
+curl -H "X-Template-Registry-Token: your-token" {{ $apiPrefix }}/stats
+
+# Запись (с write-токеном)
+curl -X POST {{ $apiPrefix }}/templates \
+  -H "X-Template-Registry-Write-Token: your-write-token" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Landing","alias":"landing"}'
+
+# TV values для ресурса
+curl -X PUT {{ $apiPrefix }}/resources/7/tv-values \
+  -H "X-Template-Registry-Write-Token: your-write-token" \
+  -H "Content-Type: application/json" \
+  -d '{"values":{"1":"new value","hero_title":"Hello"}}'
+            </pre>
+
+            <p style="margin-top:1rem;">Подробнее — в <code>README.md</code> и <code>AGENTS.md</code> пакета.</p>
         </div>
 
     @endif

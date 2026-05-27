@@ -231,6 +231,115 @@ class TemplateRegistryApiController
         }
     }
 
+    public function agentManifest()
+    {
+        $config = (array) \config('template-registry', []);
+        $version = (string) ($config['version'] ?? '1.0.0');
+        $apiConfig = (array) ($config['api'] ?? []);
+        $prefix = trim((string) ($apiConfig['prefix'] ?? 'api/template-registry'), '/');
+        $writeEnabled = (bool) ($apiConfig['write_enabled'] ?? false);
+        $regenerateAfterWrite = (bool) ($apiConfig['regenerate_after_write'] ?? true);
+
+        $endpoints = [
+            'read' => [
+                'GET /' => ['description' => 'Full registry payload (templates, TVs, client_settings, blang, stats, system_features)', 'filter' => '?template_id=N'],
+                'GET /templates' => ['description' => 'All templates from registry'],
+                'GET /templates/{id}' => ['description' => 'Single template by ID'],
+                'GET /tvs' => ['description' => 'Full TV catalog from site_tmplvars'],
+                'GET /client-settings' => ['description' => 'ClientSettings normalized schema and current values'],
+                'GET /resources' => ['description' => 'Resource list (paginated, default 100, max 500)', 'params' => '?limit=N&per_page=N&all=1&include_deleted=1&include_meta=1'],
+                'GET /resources/{id}' => ['description' => 'Single resource with template meta and TV values'],
+                'GET /resources/{id}/children' => ['description' => 'Child resources of given parent'],
+                'GET /stats' => ['description' => 'Registry statistics'],
+                'GET /resource-resolve' => ['description' => 'Resolve resource ID by URL or resource_id', 'params' => '?url=/path&resource_id=N'],
+                'GET /resource-context' => ['description' => 'Full page context: resource meta, template, TVs, TV values', 'params' => '?url=/path&resource_id=N'],
+                'GET /blang' => ['description' => 'bLang languages, settings, fields catalog, template links'],
+                'GET /blang/health' => ['description' => 'bLang drift detection between template links and TV assignments'],
+                'GET /blang/lexicon' => ['description' => 'bLang dictionary entries', 'params' => '?limit=N'],
+                'GET /pagebuilder-configs' => ['description' => 'All PageBuilder config files parsed'],
+                'GET /pagebuilder-configs/{name}' => ['description' => 'Single PageBuilder config by file name'],
+                'GET /agent-manifest' => ['description' => 'This document — agent instructions for working with the API'],
+            ],
+            'write' => $writeEnabled ? [
+                'POST /templates' => ['description' => 'Create template', 'returns_warnings' => true],
+                'PATCH /templates/{templateId}' => ['description' => 'Update template', 'returns_warnings' => true],
+                'DELETE /templates/{templateId}' => ['description' => 'Delete template'],
+                'POST /tvs' => ['description' => 'Create TV'],
+                'PATCH /tvs/{tvId}' => ['description' => 'Update TV'],
+                'DELETE /tvs/{tvId}' => ['description' => 'Delete TV'],
+                'PUT /templates/{templateId}/tvs/{tvId}' => ['description' => 'Attach TV to template'],
+                'DELETE /templates/{templateId}/tvs/{tvId}' => ['description' => 'Detach TV from template'],
+                'PATCH /client-settings' => ['description' => 'Update ClientSettings field values (schema-bound)'],
+                'POST /resources' => ['description' => 'Create resource'],
+                'PATCH /resources/{resourceId}' => ['description' => 'Update resource'],
+                'DELETE /resources/{resourceId}' => ['description' => 'Delete resource (soft)'],
+                'PUT /resources/{resourceId}/restore' => ['description' => 'Restore soft-deleted resource'],
+                'PUT /resources/{resourceId}/template' => ['description' => 'Change resource template'],
+                'PUT /resources/{resourceId}/published' => ['description' => 'Set resource published state'],
+                'PUT /resources/{resourceId}/tv-values' => ['description' => 'Set multiple TV values at once'],
+                'PUT /resources/{resourceId}/tv-values/{tvId}' => ['description' => 'Set single TV value'],
+                'PATCH /resources/{resourceId}/blang-fields' => ['description' => 'Update resource bLang field values'],
+                'POST /blang/lexicon' => ['description' => 'Create lexicon entry'],
+                'PATCH /blang/lexicon/{entryId}' => ['description' => 'Update lexicon entry'],
+                'DELETE /blang/lexicon/{entryId}' => ['description' => 'Delete lexicon entry'],
+                'POST /blang/fields' => ['description' => 'Create bLang field'],
+                'PATCH /blang/fields/{fieldId}' => ['description' => 'Update bLang field'],
+                'DELETE /blang/fields/{fieldId}' => ['description' => 'Delete bLang field'],
+                'POST /blang/default-params' => ['description' => 'Seed default bLang TVs from template fields'],
+                'POST /blang/fix-template-links' => ['description' => 'Repair missing bLang template links'],
+                'PATCH /blang/settings' => ['description' => 'Update bLang settings, sync language columns'],
+                'DELETE /blang/languages/{language}' => ['description' => 'Remove bLang language'],
+                'POST /cache/blade/clear' => ['description' => 'Clear blade cache files'],
+            ] : [],
+        ];
+
+        return \response()->json([
+            'name' => 'Evolution CMS Template Registry API',
+            'version' => $version,
+            'purpose' => 'Admin-side API for reading and editing templates, TVs, resources, bLang and ClientSettings in Evolution CMS',
+            'base_url' => '/' . $prefix,
+            'auth' => [
+                'token_header' => 'X-Template-Registry-Token',
+                'token_description' => 'Optional access token from config (api.access_token)',
+                'write_token_header' => 'X-Template-Registry-Write-Token',
+                'write_token_description' => 'Optional write token from config (api.write_access_token)',
+                'manager_session' => 'API also accepts Evolution CMS manager session cookies when require_manager=true',
+            ],
+            'write_enabled' => $writeEnabled,
+            'regenerate_after_write' => $regenerateAfterWrite,
+            'recommended_flow' => [
+                '1. Start with GET /stats to check registry health and get counts',
+                '2. To work with a specific page, use GET /resource-resolve?url=/path to get resource_id',
+                '3. Then GET /resource-context?url=/path for full context (template, TVs, values)',
+                '4. Use GET /templates to browse available templates and their TV assignments',
+                '5. Use GET /tvs for the full TV catalog',
+                '6. For edits: GET /resource-context first, then use write endpoints',
+            ],
+            'safety_rules' => [
+                'All read endpoints are safe and do not modify data',
+                'Write endpoints require X-Template-Registry-Write-Token header or manager session',
+                'Write endpoints regenerate registry files after successful operations',
+                'TV value updates in PUT /resources/{id}/tv-values accept {values:{"tvIdOrName": value}}',
+                'ClientSettings writes only accept fields present in GET /client-settings -> fields_catalog',
+                'Resource list is paginated by default (100 items, max 500)',
+                'Deleted resources are excluded by default; use include_deleted=1 to include them',
+            ],
+            'error_handling' => [
+                'registry_unavailable (503)' => 'Database tables missing or registry cannot be built',
+                '404' => 'Resource/template/TV not found',
+                'Validation errors return 422 with field-level messages',
+                'Write operations return {ok: bool, code: string, message: string}',
+                'POST/PATCH /templates may return warnings for missing controller/view artifacts',
+            ],
+            'endpoints' => $endpoints,
+            'see_also' => [
+                'Generated registry files (JSON/MD/PHP) in the configured output directory',
+                'Manager module at /template-registry-admin/access to toggle API on/off',
+                'README.md and AGENTS.md for full documentation',
+            ],
+        ]);
+    }
+
     public function pageBuilderConfigByName(string $name)
     {
         try {

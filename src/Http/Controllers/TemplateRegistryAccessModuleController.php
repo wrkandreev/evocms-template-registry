@@ -23,7 +23,7 @@ class TemplateRegistryAccessModuleController
         $writeToken = $settingsManager->readWriteToken($api);
         $adminPrefix = trim((string) ($api['admin_prefix'] ?? 'template-registry-admin'), '/');
         $activeTab = (string) $request->query('tab', 'access');
-        if (!in_array($activeTab, ['access', 'preview'], true)) {
+        if (!in_array($activeTab, ['access', 'preview', 'guide'], true)) {
             $activeTab = 'access';
         }
 
@@ -49,6 +49,7 @@ class TemplateRegistryAccessModuleController
             'settingsUrl' => '/' . $adminPrefix . '/access/settings',
             'accessTabUrl' => $accessUrl . '?tab=access',
             'previewTabUrl' => $accessUrl . '?tab=preview',
+            'guideTabUrl' => $accessUrl . '?tab=guide',
             'activeTab' => $activeTab,
             'preview' => $preview,
             'previewError' => $previewError,
@@ -60,10 +61,10 @@ class TemplateRegistryAccessModuleController
     {
         $result = (new ModuleSettingsManager())->save(
             (string) $request->input('api_enabled', 'enabled'),
-            (string) $request->input('access_token', ''),
             (string) $request->input('write_enabled', 'disabled'),
-            (string) $request->input('write_access_token', ''),
-            (string) $request->input('plugin_state', 'disabled')
+            (string) $request->input('plugin_state', 'disabled'),
+            $request->has('generate_access_token'),
+            $request->has('generate_write_access_token')
         );
 
         if ($result['success'] !== true) {
@@ -72,6 +73,12 @@ class TemplateRegistryAccessModuleController
         }
 
         $redirect = $this->accessTabRedirect()->with('status', 'Settings saved.');
+        if (is_string($result['generated_access_token']) && $result['generated_access_token'] !== '') {
+            $redirect = $redirect->with('generatedAccessToken', $result['generated_access_token']);
+        }
+        if (is_string($result['generated_write_access_token']) && $result['generated_write_access_token'] !== '') {
+            $redirect = $redirect->with('generatedWriteAccessToken', $result['generated_write_access_token']);
+        }
         if (is_string($result['warning']) && $result['warning'] !== '') {
             $redirect = $redirect->with('statusWarning', $result['warning']);
         }

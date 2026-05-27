@@ -180,6 +180,7 @@ Payload always includes `client_settings` object even when ClientSettings module
 Default prefix: `/api/template-registry`
 
 - `GET /api/template-registry`
+- `GET /api/template-registry/agent-manifest`
 - `GET /api/template-registry/templates`
 - `GET /api/template-registry/templates/{id}`
 - `GET /api/template-registry/tvs`
@@ -399,8 +400,8 @@ Manager route:
 
 - `GET /template-registry-admin/access`
 
-Use this page to switch API on/off, edit token value in `custom/config/template-registry.php`, and manage auto-regenerate plugin state.
-The same page also exposes write API enable/token settings.
+Use this page to switch API on/off, generate one-time-visible API tokens, and manage auto-regenerate plugin state.
+The same page also exposes write API enable/token generation. Existing tokens are masked in the UI and can only be replaced by generating a new token.
 
 ## Important conventions for agents
 

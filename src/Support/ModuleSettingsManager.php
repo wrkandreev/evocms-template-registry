@@ -27,20 +27,37 @@ class ModuleSettingsManager
         return trim((string) ($apiConfig['write_access_token'] ?? ''));
     }
 
-    /** @return array{success:bool,warning:?string} */
-    public function save(string $apiState, string $token, string $writeState, string $writeToken, string $pluginState): array
+    /** @return array{success:bool,warning:?string,generated_access_token:?string,generated_write_access_token:?string} */
+    public function save(
+        string $apiState,
+        string $writeState,
+        string $pluginState,
+        bool $generateAccessToken = false,
+        bool $generateWriteToken = false
+    ): array
     {
         $store = new ApiAccessStateStore();
         $store->setEnabled($apiState === 'enabled');
 
-        if (!$this->writeApiSettingsToConfig([
-            'access_token' => $this->normalizeToken($token),
+        $generatedAccessToken = $generateAccessToken ? $this->generateToken() : null;
+        $generatedWriteToken = $generateWriteToken ? $this->generateToken() : null;
+
+        $settings = [
             'write_enabled' => $writeState === 'enabled',
-            'write_access_token' => $this->normalizeToken($writeToken),
-        ])) {
+        ];
+        if ($generatedAccessToken !== null) {
+            $settings['access_token'] = $generatedAccessToken;
+        }
+        if ($generatedWriteToken !== null) {
+            $settings['write_access_token'] = $generatedWriteToken;
+        }
+
+        if (!$this->writeApiSettingsToConfig($settings)) {
             return [
                 'success' => false,
                 'warning' => null,
+                'generated_access_token' => null,
+                'generated_write_access_token' => null,
             ];
         }
 
@@ -60,17 +77,14 @@ class ModuleSettingsManager
         return [
             'success' => true,
             'warning' => $warning,
+            'generated_access_token' => $generatedAccessToken,
+            'generated_write_access_token' => $generatedWriteToken,
         ];
     }
 
-    private function normalizeToken(string $token): string
+    private function generateToken(): string
     {
-        $token = trim($token);
-        if (strlen($token) > 512) {
-            return substr($token, 0, 512);
-        }
-
-        return $token;
+        return bin2hex(random_bytes(32));
     }
 
     /** @param array<string,mixed> $values */
